@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Ladder — Shareable FINAL (index.html)</title>
+<title>Ladder — Manual Shares + Dates (with Defaults baked & migration)</title>
 <meta name="theme-color" content="#0a7">
 <style>
 :root{--fg:#111;--bg:#f7f7f7;--panel:#fff;--border:#e6e6e6;--accent:#0a7}
@@ -26,19 +26,20 @@ button.warn{background:#d33}
 .card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:14px}
 .rungs{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
 table{width:100%;border-collapse:collapse;font-size:13px;background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden}
-th,td{border-bottom:1px solid var(--border);padding:8px 6px;text-align:right;white-space:nowrap}
-th{background:#f2f2f2;text-align:center}
-td:first-child,th:first-child{position:sticky;left:0;background:inherit;text-align:center}
+th,td{border-bottom:1px solid var(--border);padding:8px 6px;text-align:center;white-space:nowrap}
+th{background:#f2f2f2}
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .notice{font-size:12px;color:#666}
 .badge{display:inline-block;background:#eee;border-radius:999px;padding:2px 8px;font-size:12px;margin-left:6px}
 .status{margin-left:auto}
 @media(max-width:880px){.app{grid-template-columns:1fr} .sidebar{border-bottom:1px solid var(--border); border-right:none} }
 label.small{font-size:12px;color:#444;margin-bottom:2px;display:block}
+input[type="date"]{min-width:140px}
+td[contenteditable="true"]{background:#fff8e1;outline:none}
 </style>
 </head>
 <body>
-<div class="banner">✅ SHAREABLE FINAL — single-file app (multi‑stock, 2/3 rungs, Defaults, autosave). New visitors always start blank. Your data saves locally on your device.</div>
+<div class="banner">✅ FINAL — Manual Shares + Buy/Sell Dates — Defaults baked: 2‑rung (2.0/4.5, −1.5/−2.5) • 3‑rung (2.5/4.5/7, −1.8/−3/−4.5). Auto‑migration keeps your saved data.</div>
 <div class="app">
   <aside class="sidebar">
     <h1>My Ladders <span class="badge">Single-file</span></h1>
@@ -148,19 +149,50 @@ label.small{font-size:12px;color:#444;margin-bottom:2px;display:block}
 </div>
 
 <script>
-// --- Storage keys ---
-// SHAREABLE: if URL contains ?share, we never load or save personal data.
+// --- Storage keys & migration ---
 const SHARE_MODE = location.search.includes('share');
-const KEY = SHARE_MODE ? 'ladder.share.blank' : 'ladder.singlefile.final';
-const DEFKEY = 'ladder.defaults.v1';
+const NEW_KEY = 'ladder.singlefile.manualdates.v2';  // new key for this build
+const DEFKEY  = 'ladder.defaults.v1';
+const LEGACY_KEYS = [
+  'ladder.current.singlefile.v1',
+  'ladder.sf.v4',
+  'ladder.singlefile.final',
+  'ladder.github.singlefile.v1',
+  'ladder.singlefile.manualdates.v1'
+];
 const $ = s=>document.querySelector(s);
 
-function load(){ try{ return SHARE_MODE ? [] : (JSON.parse(localStorage.getItem(KEY))||[]) }catch(e){ return [] } }
-function save(arr){ if(SHARE_MODE) return; localStorage.setItem(KEY, JSON.stringify(arr)); const ss=document.getElementById('saveStatus'); if(ss) ss.textContent='Last saved: '+new Date().toLocaleTimeString(); }
+function tryLoad(k){ try{ return JSON.parse(localStorage.getItem(k)||'null') }catch(e){ return null } }
+function migrateIfNeeded(){
+  if (SHARE_MODE) return []; // never migrate on share mode
+  const existing = tryLoad(NEW_KEY);
+  if (existing && Array.isArray(existing) && existing.length) return existing;
+  for (const k of LEGACY_KEYS){
+    const v = tryLoad(k);
+    if (v && Array.isArray(v) && v.length){
+      localStorage.setItem(NEW_KEY, JSON.stringify(v));
+      return v;
+    }
+  }
+  return [];
+}
 
-// Defaults
-const DEFAULTS = { gains2:[2.0,4.5], backs2:[-1.5,-2.5], gains3:[2.5,4.5,7], backs3:[-1.8,-3,-4.5], cap2:66, cap3:380, reinv:50, manual:0, seed:0 };
-function loadDefaults(){ try{ const j=JSON.parse(localStorage.getItem(DEFKEY)||'null'); return j? j: {...DEFAULTS}; }catch(e){ return {...DEFAULTS}; } }
+function load(){ return SHARE_MODE ? [] : (migrateIfNeeded()); }
+function save(arr){
+  if(SHARE_MODE) return;
+  localStorage.setItem(NEW_KEY, JSON.stringify(arr));
+  const ss=document.getElementById('saveStatus'); if(ss) ss.textContent='Last saved: '+new Date().toLocaleTimeString();
+}
+
+// Defaults (baked as requested)
+const DEFAULTS = {
+  gains2:[2.0,4.5], backs2:[-1.5,-2.5],
+  gains3:[2.5,4.5,7.0], backs3:[-1.8,-3.0,-4.5],
+  cap2:66, cap3:380, reinv:50, manual:0, seed:0
+};
+function loadDefaults(){
+  try{ const j=JSON.parse(localStorage.getItem(DEFKEY)||'null'); return j? j: {...DEFAULTS}; }catch(e){ return {...DEFAULTS}; }
+}
 function saveDefaults(d){ localStorage.setItem(DEFKEY, JSON.stringify(d)); }
 
 let DEF = loadDefaults();
@@ -313,8 +345,10 @@ function buildTables(){
     t.innerHTML=`<thead><tr>
       <th>${obj.ticker} — Rung ${rung}</th>
       <th>Planned Buy</th><th>Planned Sell</th><th>Profit/Share</th>
-      <th>Auto Shares</th><th>Manual Shares</th><th>Shares Used</th><th>Planned Total</th>
-      <th>Actual Buy</th><th>Actual Sell</th><th>Filled Qty</th><th>Realized P/L</th><th>Δ vs Plan</th><th>Cum Realized</th>
+      <th>Planned Shares</th><th>Planned Total</th>
+      <th>Buy Date</th><th>Sell Date</th>
+      <th>Actual Buy</th><th>Actual Sell</th><th>Filled Qty</th>
+      <th>Realized P/L</th><th>Δ vs Plan</th><th>Cum Realized</th>
     </tr></thead><tbody></tbody>`;
     const tb=t.querySelector('tbody'); let cum=0, prevSell=null;
     for(let c=1;c<=obj.cycles;c++){
@@ -322,52 +356,63 @@ function buildTables(){
       let buy=(c===1)? Math.max(obj.startPrice||0, cfg.seed||0) : prevSell*(1+cfg.buybackPct);
       if(saved.buy) buy=parseFloat(saved.buy)||buy;
       const sell=buy*(1+cfg.gainPct), profit=sell-buy;
-      const baseShares = (c===1 && obj.initShares)? obj.initShares : 0;
-      const auto = Math.max(baseShares, Math.floor(((cfg.startCap)+(cfg.reinvestPct*cum))/Math.max(buy,0.01)));
-      const manual = saved.manual? parseInt(saved.manual)||0 : (cfg.manual>0? cfg.manual:0);
-      const used = manual>0? manual: auto;
-      const plannedTotal = profit*used;
-      const aBuy=saved.aBuy? parseFloat(saved.aBuy)||0:0, aSell=saved.aSell? parseFloat(saved.aSell)||0:0, qty=saved.qty? parseInt(saved.qty)||0:0;
-      const realized=(aSell-aBuy)*qty; cum+=realized;
+      const plannedShares = (c===1 && obj.initShares) ? obj.initShares : (saved.plannedShares? parseInt(saved.plannedShares)||0: 0);
+      const plannedTotal = profit * (plannedShares||0);
+      const aBuy=saved.aBuy? parseFloat(saved.aBuy)||0:0,
+            aSell=saved.aSell? parseFloat(saved.aSell)||0:0,
+            qty=saved.qty? parseInt(saved.qty)||0:0;
+      const realized=(aSell-aBuy)*qty;
+      cum+=realized;
+      const deltaVsPlan = aSell? (aSell - sell) : 0;
+      const statusIcon = aSell ? (deltaVsPlan>=0 ? '✅' : '⚠️') : '⏳';
 
-      const tr=document.createElement('tr'); tr.innerHTML=`<td>${c}</td>
+      const tr=document.createElement('tr');
+      tr.innerHTML=`
+        <td>${c}</td>
         <td contenteditable="true">${money(buy)}</td>
         <td>${money(sell)}</td>
         <td>${money(profit)}</td>
-        <td>${auto}</td>
-        <td contenteditable="true">${manual?manual:''}</td>
-        <td>${used}</td>
+        <td contenteditable="true">${plannedShares||''}</td>
         <td>${money(plannedTotal)}</td>
+        <td><input type="date" value="${saved.buyDate||''}"></td>
+        <td><input type="date" value="${saved.sellDate||''}"></td>
         <td contenteditable="true">${aBuy? aBuy.toFixed(2): ''}</td>
         <td contenteditable="true">${aSell? aSell.toFixed(2): ''}</td>
         <td contenteditable="true">${qty? qty: ''}</td>
         <td>${money(realized)}</td>
-        <td>${money(aSell? (aSell - sell): 0)}</td>
+        <td title="Actual Sell - Planned Sell">${statusIcon} ${money(deltaVsPlan)}</td>
         <td>${money(cum)}</td>`;
       tb.appendChild(tr); prevSell=sell;
     }
-    t.addEventListener('input', ()=>{
+    const recalc=()=>{
       const rows=[...t.querySelectorAll('tbody tr')]; let cum2=0;
       rows.forEach((r,i)=>{
-        const parseM = el=> parseFloat((el.textContent||'').replace(/[^0-9.\-]/g,''))||0;
-        const parseI = el=> parseInt((el.textContent||'').replace(/[^0-9\-]/g,''))||0;
-        const buyEl=r.children[1], sellEl=r.children[2], profitEl=r.children[3], autoEl=r.children[4], manualEl=r.children[5],
-              usedEl=r.children[6], planEl=r.children[7], aBuyEl=r.children[8], aSellEl=r.children[9], qtyEl=r.children[10],
-              realEl=r.children[11], deltaEl=r.children[12], cumEl=r.children[13];
-        let buy=parseM(buyEl);
-        if(i>0){ const prevSell=parseM(rows[i-1].children[2]); const cfg=cfgs[t.dataset.rung-1]; buy=prevSell*(1+cfg.buybackPct); buyEl.textContent=money(buy); }
-        const cfg=cfgs[t.dataset.rung-1]; const sell=buy*(1+cfg.gainPct); sellEl.textContent=money(sell);
+        const getNum = el=> parseFloat((el.textContent||'').replace(/[^0-9.\-]/g,''))||0;
+        const getInt = el=> parseInt((el.textContent||'').replace(/[^0-9\-]/g,''))||0;
+        const buyEl=r.children[1], sellEl=r.children[2], profitEl=r.children[3], plannedSharesEl=r.children[4], plannedTotalEl=r.children[5],
+              buyDateEl=r.children[6].firstElementChild, sellDateEl=r.children[7].firstElementChild,
+              aBuyEl=r.children[8], aSellEl=r.children[9], qtyEl=r.children[10], realEl=r.children[11], deltaEl=r.children[12], cumEl=r.children[13];
+        let buy=getNum(buyEl);
+        if(i>0){ const prevSell=parseFloat(rows[i-1].children[2].textContent)||0; const cfg=cfgs[t.dataset.rung-1]; buy=prevSell*(1+cfg.buybackPct); buyEl.textContent=money(buy); }
+        const cfg=cfgs[t.dataset.rung-1];
+        const sell=buy*(1+cfg.gainPct); sellEl.textContent=money(sell);
         const profit=sell-buy; profitEl.textContent=money(profit);
-        const auto=Math.max((i===0? (data.find(x=>x.id===currentId).initShares||0):0), Math.floor(((cfg.startCap)+(cfg.reinvestPct*cum2))/Math.max(buy,0.01))); autoEl.textContent=auto;
-        const manual=parseI(manualEl); const used=manual>0? manual:auto; usedEl.textContent=used;
-        planEl.textContent=money(profit*used);
-        const aBuy=parseM(aBuyEl), aSell=parseM(aSellEl), qty=parseI(qtyEl); const realized=(aSell-aBuy)*qty; realEl.textContent=money(realized);
-        deltaEl.textContent=money(aSell? (aSell - sell): 0); cum2+=realized; cumEl.textContent=money(cum2);
+        const ps=getInt(plannedSharesEl); plannedTotalEl.textContent=money(profit*ps);
+        const aBuy=getNum(aBuyEl), aSell=getNum(aSellEl), qty=getInt(qtyEl);
+        const realized=(aSell-aBuy)*qty; realEl.textContent=money(realized);
+        const delta=(aSell? (aSell-sell):0); const icon = aSell ? (delta>=0?'✅':'⚠️') : '⏳'; deltaEl.textContent=`${icon} ${money(delta)}`;
+        cum2+=realized; cumEl.textContent=money(cum2);
+
         // persist
-        const cyc=i+1, obj=data.find(x=>x.id===currentId); if(!obj.rows[rung]) obj.rows[rung]={}; if(!obj.rows[rung][cyc]) obj.rows[rung][cyc]={};
-        obj.rows[rung][cyc]={ buy:buyEl.textContent, manual:manualEl.textContent, aBuy:aBuyEl.textContent, aSell:aSellEl.textContent, qty:qtyEl.textContent };
+        const cyc=i+1, obj=data.find(x=>x.id===currentId); if(!obj.rows[t.dataset.rung]) obj.rows[t.dataset.rung]={}; if(!obj.rows[t.dataset.rung][cyc]) obj.rows[t.dataset.rung][cyc]={};
+        obj.rows[t.dataset.rung][cyc]={
+          buy:buyEl.textContent, plannedShares:plannedSharesEl.textContent, buyDate:buyDateEl.value, sellDate:sellDateEl.value,
+          aBuy:aBuyEl.textContent, aSell:aSellEl.textContent, qty:qtyEl.textContent
+        };
       }); save(data);
-    });
+    };
+    t.addEventListener('input', recalc);
+    t.addEventListener('change', recalc);
     tablesDiv.appendChild(t);
   });
 }
@@ -378,7 +423,7 @@ document.getElementById('csvBtn').addEventListener('click', ()=>{
   document.querySelectorAll('table').forEach(t=>{
     out.push([`${obj.ticker} — Rung ${t.dataset.rung}`]);
     out.push([...t.querySelectorAll('th')].map(th=>th.textContent.trim()));
-    t.querySelectorAll('tbody tr').forEach(tr=> out.push([...tr.children].map(td=>td.textContent.replace(/\n/g,' ').trim())));
+    t.querySelectorAll('tbody tr').forEach(tr=> out.push([...tr.children].map(td=> td.querySelector('input[type="date"]') ? td.querySelector('input[type="date"]').value : td.textContent.replace(/\n/g,' ').trim() )));
     out.push([]);
   });
   const csv = out.map(r=>r.map(x=>{const s=String(x||''); return /[",\n]/.test(s)? `"${s.replace(/"/g,'""')}"`: s}).join(',')).join('\n');
@@ -391,8 +436,7 @@ document.getElementById('importFile').addEventListener('change', async e=>{ cons
 document.getElementById('deleteBtn').addEventListener('click', ()=>{ const i=data.findIndex(x=>x.id===currentId); if(i>=0 && confirm('Delete this ladder?')){ data.splice(i,1); save(data); renderList(); document.getElementById('editor').style.display='none'; document.getElementById('emptyState').style.display='block'; } });
 
 // init
-showDefaults();
-renderList();
+(function init(){ renderList(); showDefaults(); })();
 </script>
 </body>
 </html>
