@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ladder — Shareable FINAL (index.html)</title>
+<meta name="theme-color" content="#0a7">
+<style>
+:root{--fg:#111;--bg:#f7f7f7;--panel:#fff;--border:#e6e6e6;--accent:#0a7}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+.banner{background:#0a7;color:#fff;padding:10px 12px;border-radius:12px;font-weight:700;margin:14px}
+.app{display:grid;grid-template-columns:290px 1fr;min-height:100vh}
+.sidebar{background:#fff;border-right:1px solid var(--border);padding:12px}
+.main{padding:16px}
+h1{font-size:18px;margin:6px 0 12px}
+h2{font-size:16px;margin:14px 0 10px}
+input,select,button{width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;background:#fff;font-size:15px}
+button{cursor:pointer;background:var(--accent);color:#fff;font-weight:600;border:none}
+button.secondary{background:#444}
+button.warn{background:#d33}
+.list{display:flex;flex-direction:column;gap:8px;margin:8px 0 16px}
+.item{display:flex;justify-content:space-between;align-items:center;background:#fafafa;border:1px solid var(--border);border-radius:10px;padding:10px}
+.item .actions{display:flex;gap:6px}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:14px}
+.rungs{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+table{width:100%;border-collapse:collapse;font-size:13px;background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+th,td{border-bottom:1px solid var(--border);padding:8px 6px;text-align:right;white-space:nowrap}
+th{background:#f2f2f2;text-align:center}
+td:first-child,th:first-child{position:sticky;left:0;background:inherit;text-align:center}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.notice{font-size:12px;color:#666}
+.badge{display:inline-block;background:#eee;border-radius:999px;padding:2px 8px;font-size:12px;margin-left:6px}
+.status{margin-left:auto}
+@media(max-width:880px){.app{grid-template-columns:1fr} .sidebar{border-bottom:1px solid var(--border); border-right:none} }
+label.small{font-size:12px;color:#444;margin-bottom:2px;display:block}
+</style>
+</head>
+<body>
+<div class="banner">✅ SHAREABLE FINAL — single-file app (multi‑stock, 2/3 rungs, Defaults, autosave). New visitors always start blank. Your data saves locally on your device.</div>
+<div class="app">
+  <aside class="sidebar">
+    <h1>My Ladders <span class="badge">Single-file</span></h1>
+    <div id="stockList" class="list"></div>
+
+    <div class="card">
+      <h2 style="margin-top:0">Add Ladder</h2>
+      <div class="row">
+        <div><input id="newTicker" placeholder="Ticker (e.g., RIOT)"></div>
+        <div><input id="newName" placeholder="Nickname (optional)"></div>
+      </div>
+      <div class="row">
+        <div><select id="newRungs"><option value="2">2 rungs</option><option value="3" selected>3 rungs</option></select></div>
+        <div><input id="newInitialShares" type="number" step="1" placeholder="Initial shares (optional)"></div>
+      </div>
+      <div class="row">
+        <div><button id="addBtn">Add Ladder</button></div>
+        <div><button class="secondary" id="exportBtn">Export Setups</button></div>
+      </div>
+      <div class="row"><div><button class="secondary" id="importBtn">Import Setups</button></div></div>
+      <input id="importFile" type="file" accept=".json" style="display:none">
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0">Defaults</h2>
+      <label class="small">2‑Rung Gains % (comma)</label>
+      <input id="defGains2" placeholder="2.0,4.5">
+      <label class="small">2‑Rung Buybacks % (negatives ok)</label>
+      <input id="defBacks2" placeholder="-1.5,-2.5">
+      <label class="small">3‑Rung Gains % (comma)</label>
+      <input id="defGains3" placeholder="2.5,4.5,7">
+      <label class="small">3‑Rung Buybacks % (negatives ok)</label>
+      <input id="defBacks3" placeholder="-1.8,-3,-4.5">
+
+      <div class="row" style="margin-top:8px">
+        <div>
+          <label class="small">Start Capital (2‑rung)</label>
+          <input id="defCap2" type="number" step="0.01" placeholder="66">
+        </div>
+        <div>
+          <label class="small">Start Capital (3‑rung)</label>
+          <input id="defCap3" type="number" step="0.01" placeholder="380">
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label class="small">Reinvest % of Realized</label>
+          <input id="defReinv" type="number" step="0.01" placeholder="50">
+        </div>
+        <div>
+          <label class="small">Manual Shares Override</label>
+          <input id="defManual" type="number" step="1" placeholder="0">
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label class="small">Seed Buy</label>
+          <input id="defSeed" type="number" step="0.01" placeholder="0">
+        </div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <div><button id="saveDefaults">Save Defaults</button></div>
+        <div><button class="secondary" id="resetDefaults">Reset</button></div>
+      </div>
+      <div class="notice" style="margin-top:6px">Defaults apply to new ladders. Use “Apply Defaults to Rungs” inside the editor to push them into the current ladder.</div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div id="editor" style="display:none">
+      <div class="card">
+        <div class="row">
+          <div><label>Ticker</label><input id="ticker"></div>
+          <div><label>Nickname</label><input id="name"></div>
+          <div><label>Rungs</label>
+            <select id="rungCount"><option value="2">2</option><option value="3">3</option></select>
+          </div>
+        </div>
+        <div class="row">
+          <div><label>Start Price</label><input id="startPrice" type="number" step="0.01" value="0"></div>
+          <div><label>Cycles</label><input id="cycles" type="number" min="1" max="200" value="20"></div>
+          <div><label>Initial Shares (cycle 1)</label><input id="initShares" type="number" step="1"></div>
+        </div>
+        <div class="row">
+          <div><button id="applyDefaults" class="secondary">Apply Defaults to Rungs</button></div>
+        </div>
+      </div>
+
+      <div class="rungs" id="rungCards"></div>
+
+      <div class="toolbar" style="margin-top:10px">
+        <button id="buildBtn">Build Ladder</button>
+        <button id="csvBtn" class="secondary">Export CSV</button>
+        <button id="deleteBtn" class="warn">Delete Ladder</button>
+        <span class="notice status" id="saveStatus">Last saved: —</span>
+      </div>
+
+      <div id="tables" style="margin-top:14px"></div>
+    </div>
+
+    <div id="emptyState" class="card">
+      <h2>Welcome</h2>
+      <p class="notice">Add a ladder on the left. Set your Defaults once to prefill rung %s & buybacks.</p>
+    </div>
+  </main>
+</div>
+
+<script>
+// --- Storage keys ---
+// SHAREABLE: if URL contains ?share, we never load or save personal data.
+const SHARE_MODE = location.search.includes('share');
+const KEY = SHARE_MODE ? 'ladder.share.blank' : 'ladder.singlefile.final';
+const DEFKEY = 'ladder.defaults.v1';
+const $ = s=>document.querySelector(s);
+
+function load(){ try{ return SHARE_MODE ? [] : (JSON.parse(localStorage.getItem(KEY))||[]) }catch(e){ return [] } }
+function save(arr){ if(SHARE_MODE) return; localStorage.setItem(KEY, JSON.stringify(arr)); const ss=document.getElementById('saveStatus'); if(ss) ss.textContent='Last saved: '+new Date().toLocaleTimeString(); }
+
+// Defaults
+const DEFAULTS = { gains2:[2.0,4.5], backs2:[-1.5,-2.5], gains3:[2.5,4.5,7], backs3:[-1.8,-3,-4.5], cap2:66, cap3:380, reinv:50, manual:0, seed:0 };
+function loadDefaults(){ try{ const j=JSON.parse(localStorage.getItem(DEFKEY)||'null'); return j? j: {...DEFAULTS}; }catch(e){ return {...DEFAULTS}; } }
+function saveDefaults(d){ localStorage.setItem(DEFKEY, JSON.stringify(d)); }
+
+let DEF = loadDefaults();
+function showDefaults(){
+  document.getElementById('defGains2').value = DEF.gains2.join(', ');
+  document.getElementById('defBacks2').value = DEF.backs2.join(', ');
+  document.getElementById('defGains3').value = DEF.gains3.join(', ');
+  document.getElementById('defBacks3').value = DEF.backs3.join(', ');
+  document.getElementById('defCap2').value = DEF.cap2;
+  document.getElementById('defCap3').value = DEF.cap3;
+  document.getElementById('defReinv').value = DEF.reinv;
+  document.getElementById('defManual').value = DEF.manual;
+  document.getElementById('defSeed').value = DEF.seed;
+}
+function parseList(s){ return (s||'').split(',').map(x=>parseFloat(x.trim())).filter(x=>!isNaN(x)); }
+
+document.getElementById('saveDefaults').addEventListener('click', ()=>{
+  const d={
+    gains2: parseList(document.getElementById('defGains2').value), backs2: parseList(document.getElementById('defBacks2').value),
+    gains3: parseList(document.getElementById('defGains3').value), backs3: parseList(document.getElementById('defBacks3').value),
+    cap2: parseFloat(document.getElementById('defCap2').value||DEFAULTS.cap2),
+    cap3: parseFloat(document.getElementById('defCap3').value||DEFAULTS.cap3),
+    reinv: parseFloat(document.getElementById('defReinv').value||DEFAULTS.reinv),
+    manual: parseFloat(document.getElementById('defManual').value||0),
+    seed: parseFloat(document.getElementById('defSeed').value||0)
+  };
+  if(!(d.gains2.length===2 && d.backs2.length===2 && d.gains3.length===3 && d.backs3.length===3)){
+    alert('Enter 2 values for 2‑rung and 3 values for 3‑rung.');
+    return;
+  }
+  DEF=d; saveDefaults(DEF); alert('Defaults saved. New ladders will use these.');
+});
+document.getElementById('resetDefaults').addEventListener('click', ()=>{ DEF={...DEFAULTS}; saveDefaults(DEF); showDefaults(); alert('Defaults reset.'); });
+
+// ---- App data ----
+let data = load(), currentId=null;
+const list = document.getElementById('stockList'), importFile=document.getElementById('importFile');
+function pct(x){ const n=parseFloat(x); return isFinite(n)? n/100:0 }
+function money(n){ return (isFinite(n)? n:0).toFixed(2) }
+
+function renderList(){
+  list.innerHTML='';
+  data.forEach((s,idx)=>{
+    const el=document.createElement('div'); el.className='item';
+    el.innerHTML=`<div><b>${s.ticker||'UNTITLED'}</b> <span class="notice">${s.name||''}</span></div>
+      <div class="actions">
+        <button class="secondary" data-open="${idx}">Open</button>
+        <button class="warn" data-del="${idx}">Delete</button>
+      </div>`;
+    list.appendChild(el);
+  });
+  if(data.length===0){ document.getElementById('editor').style.display='none'; document.getElementById('emptyState').style.display='block'; }
+}
+
+function defaultsFor(count){
+  const gains = (count===2) ? DEF.gains2 : DEF.gains3;
+  const backs = (count===2) ? DEF.backs2 : DEF.backs3;
+  const cap =   (count===2) ? DEF.cap2   : DEF.cap3;
+  return gains.map((g,i)=>({gain:g,buyback:backs[i],cap:cap,reinvest:DEF.reinv,manual:DEF.manual,seed:DEF.seed}));
+}
+
+document.getElementById('addBtn').addEventListener('click', ()=>{
+  const ticker = (document.getElementById('newTicker').value||'').trim().toUpperCase();
+  const name = (document.getElementById('newName').value||'').trim();
+  const rungs = parseInt(document.getElementById('newRungs').value,10);
+  const initShares = parseInt(document.getElementById('newInitialShares').value||'0',10);
+  if(!ticker){ alert('Enter a ticker'); return; }
+  const obj = { id:Date.now(), ticker, name, rungCount:rungs, startPrice:0, cycles:20, initShares:initShares||0, rungs:defaultsFor(rungs), rows:{} };
+  data.push(obj); save(data); renderList(); openItem(obj.id);
+  document.getElementById('newTicker').value=''; document.getElementById('newName').value=''; document.getElementById('newInitialShares').value='';
+});
+
+list.addEventListener('click', (e)=>{
+  const del = e.target.getAttribute('data-del'), op = e.target.getAttribute('data-open');
+  if(del!==null){ const i=parseInt(del,10); if(confirm('Delete this ladder?')){ data.splice(i,1); save(data); renderList(); } }
+  if(op!==null){ const i=parseInt(op,10); openItem(data[i].id); }
+});
+
+function openItem(id){
+  const obj = data.find(x=>x.id===id); if(!obj) return;
+  currentId=id; document.getElementById('emptyState').style.display='none'; document.getElementById('editor').style.display='block';
+  document.getElementById('ticker').value=obj.ticker; document.getElementById('name').value=obj.name||''; document.getElementById('rungCount').value=obj.rungCount;
+  document.getElementById('startPrice').value=obj.startPrice||0; document.getElementById('cycles').value=obj.cycles||20; document.getElementById('initShares').value=obj.initShares||0;
+  renderRungCards(obj); buildTables();
+  const ss=document.getElementById('saveStatus'); if(ss) ss.textContent='Last saved: '+new Date().toLocaleTimeString();
+}
+
+function persistHeader(){
+  if(SHARE_MODE) return;
+  const i=data.findIndex(x=>x.id===currentId); if(i<0) return;
+  data[i].ticker=document.getElementById('ticker').value.trim().toUpperCase();
+  data[i].name=document.getElementById('name').value.trim();
+  data[i].rungCount=parseInt(document.getElementById('rungCount').value,10);
+  data[i].startPrice=parseFloat(document.getElementById('startPrice').value||0);
+  data[i].cycles=parseInt(document.getElementById('cycles').value||20,10);
+  data[i].initShares=parseInt(document.getElementById('initShares').value||0,10);
+  data[i].rungs=collectRungs();
+  save(data); renderList();
+}
+['ticker','name','rungCount','startPrice','cycles','initShares'].forEach(id=> document.getElementById(id).addEventListener('input', persistHeader));
+
+document.getElementById('applyDefaults').addEventListener('click', ()=>{
+  const i=data.findIndex(x=>x.id===currentId); if(i<0) return;
+  const cnt = data[i].rungCount;
+  data[i].rungs = defaultsFor(cnt);
+  save(data);
+  renderRungCards(data[i]); buildTables();
+  alert('Defaults applied to this ladder.');
+});
+
+function rungCardTemplate(idx,d){ return `<div class="card" data-r="${idx}">
+  <div style="font-weight:700;margin-bottom:6px">Rung ${idx}</div>
+  <div class="row">
+    <div><label class="small">Gain %</label><input class="ri" data-k="gain" type="number" step="0.01" value="${d.gain}"></div>
+    <div><label class="small">Buyback %</label><input class="ri" data-k="buyback" type="number" step="0.01" value="${d.buyback}"></div>
+  </div>
+  <div class="row">
+    <div><label class="small">Start Capital</label><input class="ri" data-k="cap" type="number" step="0.01" value="${d.cap}"></div>
+    <div><label class="small">Reinvest % of Realized</label><input class="ri" data-k="reinvest" type="number" step="0.01" value="${d.reinvest}"></div>
+  </div>
+  <div class="row">
+    <div><label class="small">Manual Shares Override</label><input class="ri" data-k="manual" type="number" step="1" value="${d.manual||''}"></div>
+    <div><label class="small">Seed Buy (optional)</label><input class="ri" data-k="seed" type="number" step="0.01" value="${d.seed||''}"></div>
+  </div>
+</div>`;}
+
+function renderRungCards(obj){
+  const cont=document.getElementById('rungCards'); cont.innerHTML=''; const count=parseInt(document.getElementById('rungCount').value,10);
+  const have=(obj&&obj.rungs)? obj.rungs:defaultsFor(count); const list=have.slice(0,count);
+  while(list.length<count) list.push(defaultsFor(count)[list.length]);
+  list.forEach((p,i)=> cont.insertAdjacentHTML('beforeend', rungCardTemplate(i+1,p)));
+  cont.querySelectorAll('.ri').forEach(inp=> inp.addEventListener('input', persistHeader));
+}
+function collectRungs(){
+  return [...document.querySelectorAll('.card[data-r]')].map(card=>{
+    const o={}; card.querySelectorAll('.ri').forEach(i=> o[i.dataset.k]=parseFloat(i.value||0)); return o;
+  });
+}
+
+const tablesDiv=document.getElementById('tables');
+function ensureRows(obj){ if(!obj.rows) obj.rows={}; for(let r=1;r<=obj.rungCount;r++){ if(!obj.rows[r]) obj.rows[r]={}; } }
+
+function buildTables(){
+  persistHeader(); const obj=data.find(x=>x.id===currentId); if(!obj) return; ensureRows(obj);
+  tablesDiv.innerHTML='';
+  const cfgs = obj.rungs.map(r=>({gainPct:parseFloat(r.gain)/100, buybackPct:parseFloat(r.buyback)/100, startCap:r.cap, reinvestPct:parseFloat(r.reinvest)/100, manual:r.manual||0, seed:r.seed||0}));
+
+  cfgs.forEach((cfg,idx)=>{
+    const rung=idx+1; const t=document.createElement('table'); t.dataset.rung=rung;
+    t.innerHTML=`<thead><tr>
+      <th>${obj.ticker} — Rung ${rung}</th>
+      <th>Planned Buy</th><th>Planned Sell</th><th>Profit/Share</th>
+      <th>Auto Shares</th><th>Manual Shares</th><th>Shares Used</th><th>Planned Total</th>
+      <th>Actual Buy</th><th>Actual Sell</th><th>Filled Qty</th><th>Realized P/L</th><th>Δ vs Plan</th><th>Cum Realized</th>
+    </tr></thead><tbody></tbody>`;
+    const tb=t.querySelector('tbody'); let cum=0, prevSell=null;
+    for(let c=1;c<=obj.cycles;c++){
+      const saved=obj.rows[rung][c]||{};
+      let buy=(c===1)? Math.max(obj.startPrice||0, cfg.seed||0) : prevSell*(1+cfg.buybackPct);
+      if(saved.buy) buy=parseFloat(saved.buy)||buy;
+      const sell=buy*(1+cfg.gainPct), profit=sell-buy;
+      const baseShares = (c===1 && obj.initShares)? obj.initShares : 0;
+      const auto = Math.max(baseShares, Math.floor(((cfg.startCap)+(cfg.reinvestPct*cum))/Math.max(buy,0.01)));
+      const manual = saved.manual? parseInt(saved.manual)||0 : (cfg.manual>0? cfg.manual:0);
+      const used = manual>0? manual: auto;
+      const plannedTotal = profit*used;
+      const aBuy=saved.aBuy? parseFloat(saved.aBuy)||0:0, aSell=saved.aSell? parseFloat(saved.aSell)||0:0, qty=saved.qty? parseInt(saved.qty)||0:0;
+      const realized=(aSell-aBuy)*qty; cum+=realized;
+
+      const tr=document.createElement('tr'); tr.innerHTML=`<td>${c}</td>
+        <td contenteditable="true">${money(buy)}</td>
+        <td>${money(sell)}</td>
+        <td>${money(profit)}</td>
+        <td>${auto}</td>
+        <td contenteditable="true">${manual?manual:''}</td>
+        <td>${used}</td>
+        <td>${money(plannedTotal)}</td>
+        <td contenteditable="true">${aBuy? aBuy.toFixed(2): ''}</td>
+        <td contenteditable="true">${aSell? aSell.toFixed(2): ''}</td>
+        <td contenteditable="true">${qty? qty: ''}</td>
+        <td>${money(realized)}</td>
+        <td>${money(aSell? (aSell - sell): 0)}</td>
+        <td>${money(cum)}</td>`;
+      tb.appendChild(tr); prevSell=sell;
+    }
+    t.addEventListener('input', ()=>{
+      const rows=[...t.querySelectorAll('tbody tr')]; let cum2=0;
+      rows.forEach((r,i)=>{
+        const parseM = el=> parseFloat((el.textContent||'').replace(/[^0-9.\-]/g,''))||0;
+        const parseI = el=> parseInt((el.textContent||'').replace(/[^0-9\-]/g,''))||0;
+        const buyEl=r.children[1], sellEl=r.children[2], profitEl=r.children[3], autoEl=r.children[4], manualEl=r.children[5],
+              usedEl=r.children[6], planEl=r.children[7], aBuyEl=r.children[8], aSellEl=r.children[9], qtyEl=r.children[10],
+              realEl=r.children[11], deltaEl=r.children[12], cumEl=r.children[13];
+        let buy=parseM(buyEl);
+        if(i>0){ const prevSell=parseM(rows[i-1].children[2]); const cfg=cfgs[t.dataset.rung-1]; buy=prevSell*(1+cfg.buybackPct); buyEl.textContent=money(buy); }
+        const cfg=cfgs[t.dataset.rung-1]; const sell=buy*(1+cfg.gainPct); sellEl.textContent=money(sell);
+        const profit=sell-buy; profitEl.textContent=money(profit);
+        const auto=Math.max((i===0? (data.find(x=>x.id===currentId).initShares||0):0), Math.floor(((cfg.startCap)+(cfg.reinvestPct*cum2))/Math.max(buy,0.01))); autoEl.textContent=auto;
+        const manual=parseI(manualEl); const used=manual>0? manual:auto; usedEl.textContent=used;
+        planEl.textContent=money(profit*used);
+        const aBuy=parseM(aBuyEl), aSell=parseM(aSellEl), qty=parseI(qtyEl); const realized=(aSell-aBuy)*qty; realEl.textContent=money(realized);
+        deltaEl.textContent=money(aSell? (aSell - sell): 0); cum2+=realized; cumEl.textContent=money(cum2);
+        // persist
+        const cyc=i+1, obj=data.find(x=>x.id===currentId); if(!obj.rows[rung]) obj.rows[rung]={}; if(!obj.rows[rung][cyc]) obj.rows[rung][cyc]={};
+        obj.rows[rung][cyc]={ buy:buyEl.textContent, manual:manualEl.textContent, aBuy:aBuyEl.textContent, aSell:aSellEl.textContent, qty:qtyEl.textContent };
+      }); save(data);
+    });
+    tablesDiv.appendChild(t);
+  });
+}
+
+document.getElementById('buildBtn').addEventListener('click', buildTables);
+document.getElementById('csvBtn').addEventListener('click', ()=>{
+  const obj=data.find(x=>x.id===currentId); if(!obj) return; let out=[];
+  document.querySelectorAll('table').forEach(t=>{
+    out.push([`${obj.ticker} — Rung ${t.dataset.rung}`]);
+    out.push([...t.querySelectorAll('th')].map(th=>th.textContent.trim()));
+    t.querySelectorAll('tbody tr').forEach(tr=> out.push([...tr.children].map(td=>td.textContent.replace(/\n/g,' ').trim())));
+    out.push([]);
+  });
+  const csv = out.map(r=>r.map(x=>{const s=String(x||''); return /[",\n]/.test(s)? `"${s.replace(/"/g,'""')}"`: s}).join(',')).join('\n');
+  const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'})); const a=document.createElement('a'); a.href=url; a.download=`${(data.find(x=>x.id===currentId)||{}).ticker||'ladder'}_ladder.csv`; a.click(); URL.revokeObjectURL(url);
+});
+document.getElementById('exportBtn').addEventListener('click', ()=>{ const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'})); const a=document.createElement('a'); a.href=url; a.download='ladders_backup.json'; a.click(); URL.revokeObjectURL(url); });
+document.getElementById('importBtn').addEventListener('click', ()=> importFile.click());
+document.getElementById('importFile').addEventListener('change', async e=>{ const f=e.target.files[0]; if(!f) return; const text=await f.text(); try{ const j=JSON.parse(text); data=Array.isArray(j)? j : (Array.isArray(j.stocks)? j.stocks:[]); save(data); renderList(); if(data[0]) openItem(data[0].id); }catch(err){ alert('Invalid backup'); } });
+
+document.getElementById('deleteBtn').addEventListener('click', ()=>{ const i=data.findIndex(x=>x.id===currentId); if(i>=0 && confirm('Delete this ladder?')){ data.splice(i,1); save(data); renderList(); document.getElementById('editor').style.display='none'; document.getElementById('emptyState').style.display='block'; } });
+
+// init
+showDefaults();
+renderList();
+</script>
+</body>
+</html>
