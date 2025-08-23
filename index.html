@@ -3,25 +3,39 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Ladder App — 10 cycles</title>
+<title>Ladder App — Original Columns + Charts (Locked %)</title>
+<link rel="icon" href="data:,">
 <style>
-  :root{--fg:#111;--bg:#f7f7f7;--card:#fff;--accent:#0a7}
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.4 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial}
-  header{display:flex;gap:12px;align-items:center;padding:14px 16px;background:var(--accent);color:#fff}
-  header h1{margin:0;font-size:20px}
-  .tabs{display:flex;gap:8px;margin:12px 16px}
-  .tabs button{flex:0 0 auto;padding:10px 14px;border:0;border-radius:10px;background:#e6f5ef;color:#085a40;font-weight:600;cursor:pointer}
-  .tabs button.active{background:#fff;border:2px solid var(--accent);color:#000}
-  main{padding:0 16px 24px}
-  .card{background:var(--card);border-radius:12px;padding:14px 14px;margin:12px 0;box-shadow:0 1px 3px rgba(0,0,0,.06)}
-  label{display:block;font-size:13px;margin:10px 0 6px;color:#333}
-  input,select,button{width:100%;padding:10px;border:1px solid #ccc;border-radius:8px}
-  button.primary{background:var(--accent);color:#fff;border:0;font-weight:700}
-  table{width:100%;border-collapse:collapse;margin-top:8px}
-  th,td{border:1px solid #e5e5e5;padding:8px;text-align:center}
-  th{background:#f2f2f2}
-  .sub{font-size:12px;color:#666}
+:root{--bg:#f6f7f9;--fg:#111;--card:#fff;--accent:#0a7;--muted:#777;--line:#e6e6e6}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 -apple-system,system-ui,Segoe UI,Roboto,Helvetica,Arial}
+header{display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--accent);color:#fff}
+header h1{margin:0;font-size:20px}
+.nav{display:flex;gap:10px;margin:10px 16px}
+.nav button{padding:10px 14px;border-radius:10px;border:1px solid var(--line);background:#fff;font-weight:600}
+.nav button.active{border-color:var(--accent);box-shadow:0 0 0 2px #dff5ec}
+.container{padding:0 12px 20px}
+.card{background:var(--card);border-radius:12px;padding:14px;margin:10px 0;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:720px){.grid{grid-template-columns:1fr}}
+label{font-size:13px;color:#333;margin-bottom:5px;display:block}
+input,select{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px}
+input[disabled]{background:#f2f2f2;color:#666}
+button.primary{background:var(--accent);color:#fff;border:0;font-weight:700;padding:10px 12px;border-radius:8px}
+.kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:10px 0}
+.kpi .box{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px}
+.kpi .t{font-size:12px;color:#666}
+.kpi .v{font-size:18px;font-weight:700;margin-top:4px}
+.controls{display:flex;gap:6px;flex-wrap:wrap}
+.controls button{flex:1 1 auto}
+.table{width:100%;border-collapse:collapse;margin-top:10px}
+.table th,.table td{border:1px solid var(--line);padding:6px;text-align:center}
+.table th{background:#fafafa}
+.sub{color:#666;font-size:12px}
+.badge{display:inline-block;background:#eef7f3;color:#055; border:1px solid #cde; padding:2px 8px;border-radius:999px;font-size:12px}
+hr.sep{border:0;border-top:1px dashed #ddd;margin:12px 0}
+footer{padding:24px 0;color:#777;text-align:center;font-size:12px}
+.tooltip{font-size:12px;color:#444;background:#fff6d7;border:1px solid #eed27a;border-radius:8px;padding:6px 8px;margin-top:6px}
 </style>
 </head>
 <body>
@@ -29,92 +43,353 @@
   <h1>📈 Ladder App</h1>
 </header>
 
-<div class="tabs">
-  <button id="tabL" class="active">Ladders</button>
-  <button id="tabC">Charts</button>
+<div class="nav">
+  <button id="tab-ladders" class="active">Ladders</button>
+  <button id="tab-charts">Charts</button>
 </div>
 
-<main>
-  <section id="viewL" class="card">
-    <h2 style="margin:0 0 6px">Add / Edit Asset</h2>
-    <div class="sub">Defaults: Sell ladder 2.5%, 4.5%, 7.0% | Buyback 1.0%, 2.5%, 3.5%</div>
-    <label>Ticker / Name</label>
-    <input id="ticker" placeholder="e.g., RIOT or CVS">
-    <label>Rungs</label>
-    <select id="rungs">
-      <option value="3">3 Rungs</option>
-      <option value="2">2 Rungs</option>
-      <option value="4">4 Rungs</option>
-    </select>
-    <label>Cycles per Rung</label>
-    <input id="cycles" type="number" min="1" max="50" value="10">
-    <label>Start Price</label>
-    <input id="start" type="number" step="0.01" placeholder="current price">
-    <button id="add" class="primary" style="margin-top:12px">+ Add Asset</button>
+<div class="container">
+
+  <section id="view-ladders">
+    <div class="card">
+      <div class="kpi">
+        <div class="box"><div class="t">Realized P/L (all)</div><div class="v" id="kpi-total">$0.00</div></div>
+        <div class="box"><div class="t"># of Assets</div><div class="v" id="kpi-assets">0</div></div>
+        <div class="box"><div class="t">Open Rows</div><div class="v" id="kpi-open">0</div></div>
+        <div class="box"><div class="t">Closed Rows</div><div class="v" id="kpi-closed">0</div></div>
+      </div>
+      <div class="grid">
+        <div>
+          <label>Ticker / Name</label>
+          <input id="in-ticker" placeholder="e.g., RIOT or CVS">
+        </div>
+        <div>
+          <label>Rungs</label>
+          <select id="in-rungs">
+            <option value="2">2 Rungs</option>
+            <option value="3" selected>3 Rungs</option>
+            <option value="4">4 Rungs</option>
+          </select>
+        </div>
+        <div>
+          <label>Default Shares per row</label>
+          <input id="in-shares" type="number" min="0" step="1" value="1">
+        </div>
+        <div>
+          <label>Start Price</label>
+          <input id="in-start" type="number" step="0.01" placeholder="current price">
+        </div>
+      </div>
+      <div class="grid" style="margin-top:8px">
+        <div>
+          <label>Sell Ladder % (locked)</label>
+          <input id="in-sell" value="2.5, 4.5, 7, 10" disabled>
+        </div>
+        <div>
+          <label>Buyback % (locked)</label>
+          <input id="in-buy" value="1, 2.5, 3.5, 5" disabled>
+        </div>
+      </div>
+      <div class="tooltip">These values are <b>locked defaults</b>. Rungs use: Sell +2.5%, +4.5%, +7%, +10% and Buyback 1%, 2.5%, 3.5%, 5% (first 2–4 applied based on rung count).</div>
+      <div class="controls" style="margin-top:10px">
+        <button id="btn-add" class="primary">+ Add Asset</button>
+        <button id="btn-save">Save</button>
+        <button id="btn-clear">Clear All (from this device)</button>
+      </div>
+    </div>
+
+    <div id="assets-host"></div>
   </section>
 
-  <div id="assets"></div>
-
-  <section id="viewC" class="card" style="display:none">
-    <h2 style="margin:0 0 6px">Charts</h2>
-    <p class="sub">Coming from your saved ladder rows. (This view is a placeholder in this cut—your deployed build may already include a full chart.)</p>
+  <section id="view-charts" style="display:none">
+    <div class="card">
+      <h3 style="margin:0 0 8px">Totals & Charts</h3>
+      <div class="grid">
+        <div>
+          <label>From</label>
+          <input type="date" id="range-from">
+        </div>
+        <div>
+          <label>To</label>
+          <input type="date" id="range-to">
+        </div>
+      </div>
+      <div class="controls" style="margin-top:10px">
+        <button id="btn-refresh" class="primary">Update Charts</button>
+        <button id="btn-year">This Year</button>
+      </div>
+      <div class="card" style="margin:12px 0">
+        <canvas id="chart1" height="220"></canvas>
+      </div>
+      <div class="card" style="margin:12px 0">
+        <canvas id="chart2" height="220"></canvas>
+      </div>
+      <div class="sub">Charts are computed from rows with a <b>Sell Date</b>, plus <b>Actual Buy/Sell</b> and <b>Filled Qty</b>. Data is stored locally on this device.</div>
+    </div>
   </section>
 
-  <section class="card">
-    <h3 style="margin:0 0 8px">Why is the first “Planned Buy” below the start?</h3>
-    <p class="sub">The buy price is the <b>buyback % below</b> the start (or last sell). With a 1% buyback and a start of $11.48: $11.48 × (1 − 0.01) = $11.3652 → shown as $11.37 after rounding.</p>
-  </section>
-</main>
+</div>
 
+<footer>Data auto-saves on this device • Export CSV for a backup (per asset)</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
-const SELL = [2.5, 4.5, 7.0];
-const BUYB = [1.0, 2.5, 3.5];
-let assets = [];
+// Hard-locked defaults
+const SELL = [2.5, 4.5, 7.0, 10.0];
+const BUYB = [1.0, 2.5, 3.5, 5.0];
+const CYCLES = 20;
 
-const $ = id => document.getElementById(id);
-$("add").onclick = () => {
-  const t = $("ticker").value.trim();
-  const r = parseInt($("rungs").value,10);
-  const c = Math.max(1, Math.min(50, parseInt($("cycles").value,10) || 10));
-  const s = parseFloat($("start").value);
-  if(!t || !isFinite(s)){ alert("Enter a ticker and a valid start price."); return; }
+let state = load() || {assets:[]};
 
-  const asset = { t, r, c, s, rows: [] };
-  for(let rung=0; rung<r; rung++){
-    const sellPct = SELL[Math.min(rung, SELL.length-1)];
-    const buyPct  = BUYB[Math.min(rung, BUYB.length-1)];
-    for(let i=1;i<=c;i++){
-      const plannedSell = +(s * (1 + sellPct/100)).toFixed(2);
-      const plannedBuy  = +(s * (1 - buyPct/100)).toFixed(2);
-      const profit      = +(plannedSell - plannedBuy).toFixed(2);
-      asset.rows.push({ rung: rung+1, cycle: i, plannedBuy, plannedSell, profit });
-    }
-  }
-  assets.push(asset);
-  render();
+// UI refs
+const elHost = document.getElementById('assets-host');
+document.getElementById('btn-add').onclick = addAsset;
+document.getElementById('btn-save').onclick = save;
+document.getElementById('btn-clear').onclick = ()=>{ if(confirm('Delete all ladders from this device?')){ localStorage.removeItem('ladder_state'); state={assets:[]}; render(); }};
+document.getElementById('tab-ladders').onclick = ()=>switchTab('ladders');
+document.getElementById('tab-charts').onclick = ()=>{switchTab('charts'); drawCharts();};
+document.getElementById('btn-refresh').onclick = drawCharts;
+document.getElementById('btn-year').onclick = ()=>{
+  const y = new Date().getFullYear();
+  doc('range-from').value = y+'-01-01';
+  doc('range-to').value = y+'-12-31';
+  drawCharts();
 };
 
-function render(){
-  const host = $("assets");
-  host.innerHTML = "";
-  assets.forEach(a => {
-    let html = `<section class="card"><h2 style="margin:0 0 8px">${a.t} — ${a.r} rung(s), ${a.c} cycles</h2>`;
-    for(let rung=1; rung<=a.r; rung++){
-      html += `<div class="sub" style="margin-top:6px">Rung ${rung} &nbsp;•&nbsp; Sell +${SELL[Math.min(rung-1,SELL.length-1)]}% &nbsp;•&nbsp; Buyback ${BUYB[Math.min(rung-1,BUYB.length-1)]}%</div>`;
-      html += `<table><thead><tr><th>Cycle</th><th>Planned Buy</th><th>Planned Sell</th><th>Profit/Share</th></tr></thead><tbody>`;
-      a.rows.filter(r=>r.rung===rung).forEach(r=>{
-        html += `<tr><td>${r.cycle}</td><td>$${r.plannedBuy.toFixed(2)}</td><td>$${r.plannedSell.toFixed(2)}</td><td>$${r.profit.toFixed(2)}</td></tr>`;
+function doc(id){ return document.getElementById(id); }
+function money(n){ return (isFinite(n)?'$'+Number(n).toFixed(2):'$0.00'); }
+function switchTab(which){
+  const ladders = which==='ladders';
+  document.getElementById('view-ladders').style.display = ladders?'':'none';
+  document.getElementById('view-charts').style.display = ladders?'none':'';
+  document.getElementById('tab-ladders').classList.toggle('active', ladders);
+  document.getElementById('tab-charts').classList.toggle('active', !ladders);
+}
+
+function addAsset(){
+  const t = doc('in-ticker').value.trim();
+  const r = parseInt(doc('in-rungs').value,10);
+  const s = parseFloat(doc('in-start').value);
+  const dfltShares = Math.max(0, parseInt(doc('in-shares').value,10)||0);
+  if(!t || !isFinite(s)) { alert('Enter a ticker and a valid Start Price'); return; }
+
+  const rows = [];
+  for(let rung=0;rung<r;rung++){
+    const sp = SELL[rung];
+    const bp = BUYB[rung];
+    for(let i=1;i<=CYCLES;i++){
+      const plannedSell = +(s*(1+sp/100)).toFixed(2);
+      const plannedBuy  = +(s*(1-bp/100)).toFixed(2);
+      const profitShare = +(plannedSell - plannedBuy).toFixed(2);
+      rows.push({
+        rung:rung+1, cycle:i,
+        plannedBuy, plannedSell, profitShare,
+        plannedShares:dfltShares, plannedTotal:+(profitShare*dfltShares).toFixed(2),
+        buyDate:'', sellDate:'',
+        actualBuy:'', actualSell:'', filledQty:'',
+        realized:0, deltaVsPlan:0, cum:0
       });
-      html += `</tbody></table>`;
+    }
+  }
+  state.assets.push({ticker:t, start:s, rungs:r, rows});
+  save(); render();
+}
+
+function compute(asset){
+  let cum = 0, open=0, closed=0;
+  asset.rows.forEach(r=>{
+    const qty = parseFloat(r.filledQty)||0;
+    const aBuy = parseFloat(r.actualBuy)||0;
+    const aSel = parseFloat(r.actualSell)||0;
+    const realized = qty*(aSel - aBuy);
+    r.realized = +realized.toFixed(2);
+    const plan = (qty>0?(r.profitShare*qty):0);
+    r.deltaVsPlan = +(r.realized - plan).toFixed(2);
+    cum += r.realized;
+    r.cum = +cum.toFixed(2);
+    if(qty>0 && r.sellDate) closed++; else open++;
+  });
+  return {cum,open,closed};
+}
+
+function render(){
+  // KPIs
+  let total=0, open=0, closed=0;
+  elHost.innerHTML = '';
+  state.assets.forEach((a,idx)=>{
+    const k = compute(a);
+    total += k.cum; open += k.open; closed += k.closed;
+
+    const header = `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <h3 style="margin:0">${a.ticker} <span class="badge">${a.rungs} rung(s) • start $${a.start.toFixed(2)}</span></h3>
+      <div style="margin-left:auto;display:flex;gap:6px">
+        <button class="primary" onclick="buildLadder(${idx})">Build Ladder</button>
+        <button onclick="exportCSV(${idx})">Export CSV</button>
+        <button onclick="deleteAsset(${idx})" style="background:#a33;color:#fff;border:0;border-radius:8px;padding:8px 12px">Delete Ladder</button>
+      </div>
+    </div>
+    <div class="sub">Rungs use locked defaults: Sell +${SELL.slice(0,a.rungs).join('%, +')}% • Buyback ${BUYB.slice(0,a.rungs).join('%, ')}% • 20 cycles. Edit any cell inline.</div>`;
+
+    let html = `<section class="card">${header}<hr class="sep">`;
+
+    for(let rung=1;rung<=a.rungs;rung++){
+      html += `<div class="sub" style="margin:6px 0 4px"><b>${a.ticker} — Rung ${rung}</b> &nbsp;•&nbsp; Sell +${SELL[rung-1]}% &nbsp;•&nbsp; Buyback ${BUYB[rung-1]}%</div>`;
+      html += `<div style="overflow:auto"><table class="table"><thead><tr>
+      <th>#</th><th>Planned Buy</th><th>Planned Sell</th><th>Profit/Share</th>
+      <th>Planned Shares</th><th>Planned Total</th><th>Buy Date</th><th>Sell Date</th>
+      <th>Actual Buy</th><th>Actual Sell</th><th>Filled Qty</th><th>Realized P/L</th><th>Δ vs Plan</th><th>Cum Realized</th>
+      </tr></thead><tbody>`;
+      a.rows.filter(r=>r.rung===rung).forEach((r,ri)=>{
+        const idxRow = a.rows.indexOf(r);
+        html += `<tr>
+          <td>${r.cycle}</td>
+          <td><input data-idx="${idx}" data-row="${idxRow}" data-key="plannedBuy" value="${r.plannedBuy}"></td>
+          <td><input data-idx="${idx}" data-row="${idxRow}" data-key="plannedSell" value="${r.plannedSell}"></td>
+          <td>${money(r.profitShare)}</td>
+          <td><input data-idx="${idx}" data-row="${idxRow}" data-key="plannedShares" value="${r.plannedShares}"></td>
+          <td>${money(r.plannedTotal)}</td>
+          <td><input data-idx="${idx}" data-row="${idxRow}" data-key="buyDate" type="date" value="${r.buyDate}"></td>
+          <td><input data-idx="${idx}" data-row="${idxRow}" data-key="sellDate" type="date" value="${r.sellDate}"></td>
+          <td><input data-idx="${idx}" data-row="${idxRow}" data-key="actualBuy" value="${r.actualBuy}"></td>
+          <td><input data-idx="${idx}" data-row="${idxRow}" data-key="actualSell" value="${r.actualSell}"></td>
+          <td><input data-idx="${idx}" data-row="${idxRow}" data-key="filledQty" value="${r.filledQty}"></td>
+          <td>${money(r.realized)}</td>
+          <td>${money(r.deltaVsPlan)}</td>
+          <td>${money(r.cum)}</td>
+        </tr>`;
+      });
+      html += `</tbody></table></div><br>`;
     }
     html += `</section>`;
-    host.insertAdjacentHTML("beforeend", html);
+    elHost.insertAdjacentHTML('beforeend', html);
+  });
+
+  doc('kpi-total').innerText = money(total);
+  doc('kpi-assets').innerText = state.assets.length;
+  doc('kpi-open').innerText = open;
+  doc('kpi-closed').innerText = closed;
+
+  // attach input handlers
+  elHost.querySelectorAll('input').forEach(inp=>{
+    inp.onchange = (e)=>{
+      const i = +e.target.dataset.idx;
+      const r = +e.target.dataset.row;
+      const key = e.target.dataset.key;
+      if(Number.isInteger(i) && Number.isInteger(r) && key){
+        let val = e.target.value;
+        state.assets[i].rows[r][key] = val;
+        // recompute plannedTotal if plannedShares changed
+        if(key==='plannedShares'){
+          const ps = parseFloat(val)||0;
+          const pf = parseFloat(state.assets[i].rows[r].profitShare)||0;
+          state.assets[i].rows[r].plannedTotal = +(ps*pf).toFixed(2);
+        }
+        save(); render();
+      }
+    };
   });
 }
 
-// tabs
-$("tabL").onclick = ()=>{ $("tabL").classList.add("active"); $("tabC").classList.remove("active"); $("viewL").style.display=""; $("viewC").style.display="none"; };
-$("tabC").onclick = ()=>{ $("tabC").classList.add("active"); $("tabL").classList.remove("active"); $("viewC").style.display=""; $("viewL").style.display="none"; };
+function buildLadder(idx){
+  const a = state.assets[idx];
+  const rows = [];
+  for(let rung=0;rung<a.rungs;rung++){
+    const sp = SELL[rung];
+    const bp = BUYB[rung];
+    for(let i=1;i<=CYCLES;i++){
+      const plannedSell = +(a.start*(1+sp/100)).toFixed(2);
+      const plannedBuy  = +(a.start*(1-bp/100)).toFixed(2);
+      const profitShare = +(plannedSell - plannedBuy).toFixed(2);
+      rows.push({
+        rung:rung+1, cycle:i,
+        plannedBuy, plannedSell, profitShare,
+        plannedShares: a.rows[i-1]?.plannedShares || 1,
+        plannedTotal:+(profitShare*(a.rows[i-1]?.plannedShares||1)).toFixed(2),
+        buyDate:'', sellDate:'', actualBuy:'', actualSell:'', filledQty:'',
+        realized:0, deltaVsPlan:0, cum:0
+      });
+    }
+  }
+  // carry over any existing actuals (same index positions)
+  a.rows = rows.map((r, i)=> Object.assign(r, state.assets[idx].rows[i] ? {
+    buyDate:state.assets[idx].rows[i].buyDate,
+    sellDate:state.assets[idx].rows[i].sellDate,
+    actualBuy:state.assets[idx].rows[i].actualBuy,
+    actualSell:state.assets[idx].rows[i].actualSell,
+    filledQty:state.assets[idx].rows[i].filledQty
+  } : {}));
+  save(); render();
+}
+
+function deleteAsset(idx){
+  if(!confirm('Delete this ladder?')) return;
+  state.assets.splice(idx,1);
+  save(); render();
+}
+
+function exportCSV(idx){
+  const a = state.assets[idx];
+  const headers = ["Ticker","Rung","Cycle","Planned Buy","Planned Sell","Profit/Share","Planned Shares","Planned Total","Buy Date","Sell Date","Actual Buy","Actual Sell","Filled Qty","Realized P/L","Delta vs Plan","Cum Realized"];
+  const rows = a.rows.map(r=>[a.ticker,r.rung,r.cycle,r.plannedBuy,r.plannedSell,r.profitShare,r.plannedShares,r.plannedTotal,r.buyDate,r.sellDate,r.actualBuy,r.actualSell,r.filledQty,r.realized,r.deltaVsPlan,r.cum]);
+  const csv = [headers].concat(rows).map(arr=>arr.join(",")).join("\n");
+  const blob = new Blob([csv],{type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const aTag = document.createElement('a');
+  aTag.href=url; aTag.download = a.ticker+"_ladder.csv";
+  aTag.click();
+  URL.revokeObjectURL(url);
+}
+
+function save(){ localStorage.setItem('ladder_state', JSON.stringify(state)); }
+function load(){ try{ return JSON.parse(localStorage.getItem('ladder_state')); }catch(e){ return null; } }
+
+// Charts
+let chart1, chart2;
+function drawCharts(){
+  const fromVal = doc('range-from').value;
+  const toVal   = doc('range-to').value;
+  const from = fromVal ? new Date(fromVal) : null;
+  const to   = toVal ? new Date(toVal) : null;
+
+  const pts = [];
+  const aggByAsset = {};
+  state.assets.forEach(a=>{
+    a.rows.forEach(r=>{
+      const qty = parseFloat(r.filledQty)||0;
+      const aBuy = parseFloat(r.actualBuy)||0;
+      const aSel = parseFloat(r.actualSell)||0;
+      if(qty>0 && r.sellDate){
+        const d = new Date(r.sellDate+"T00:00:00");
+        if((!from || d>=from) && (!to || d<=to)){
+          const realized = +(qty*(aSel-aBuy)).toFixed(2);
+          pts.push({x:d, y:realized});
+          aggByAsset[a.ticker] = (aggByAsset[a.ticker]||0) + realized;
+        }
+      }
+    });
+  });
+
+  const ctx1 = document.getElementById('chart1').getContext('2d');
+  if(chart1) chart1.destroy();
+  chart1 = new Chart(ctx1, {
+    type:'bar',
+    data:{ datasets:[{label:'Realized P/L', data:pts, parsing:false}] },
+    options:{ scales:{ x:{ type:'time', time:{ unit:'day'} } }, plugins:{ legend:{ display:true } } }
+  });
+
+  const labels = Object.keys(aggByAsset);
+  const data = labels.map(k=>+aggByAsset[k].toFixed(2));
+  const ctx2 = document.getElementById('chart2').getContext('2d');
+  if(chart2) chart2.destroy();
+  chart2 = new Chart(ctx2, {
+    type:'bar',
+    data:{ labels, datasets:[{label:'Realized P/L by Asset', data}] },
+    options:{ plugins:{ legend:{ display:true } } }
+  });
+}
+
+// initial render
+render();
 </script>
 </body>
 </html>
