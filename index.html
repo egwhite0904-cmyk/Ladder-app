@@ -1,108 +1,120 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ladder App</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
-    h1 { color: #0a7; }
-    .tabs { display: flex; margin-bottom: 20px; }
-    .tabs button { flex: 1; padding: 10px; font-size: 16px; cursor: pointer; }
-    .tabs button.active { background: #0a7; color: #fff; }
-    .tabcontent { display: none; }
-    .tabcontent.active { display: block; }
-    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-    th { background: #eee; }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ladder App — 10 cycles</title>
+<style>
+  :root{--fg:#111;--bg:#f7f7f7;--card:#fff;--accent:#0a7}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.4 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial}
+  header{display:flex;gap:12px;align-items:center;padding:14px 16px;background:var(--accent);color:#fff}
+  header h1{margin:0;font-size:20px}
+  .tabs{display:flex;gap:8px;margin:12px 16px}
+  .tabs button{flex:0 0 auto;padding:10px 14px;border:0;border-radius:10px;background:#e6f5ef;color:#085a40;font-weight:600;cursor:pointer}
+  .tabs button.active{background:#fff;border:2px solid var(--accent);color:#000}
+  main{padding:0 16px 24px}
+  .card{background:var(--card);border-radius:12px;padding:14px 14px;margin:12px 0;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+  label{display:block;font-size:13px;margin:10px 0 6px;color:#333}
+  input,select,button{width:100%;padding:10px;border:1px solid #ccc;border-radius:8px}
+  button.primary{background:var(--accent);color:#fff;border:0;font-weight:700}
+  table{width:100%;border-collapse:collapse;margin-top:8px}
+  th,td{border:1px solid #e5e5e5;padding:8px;text-align:center}
+  th{background:#f2f2f2}
+  .sub{font-size:12px;color:#666}
+</style>
 </head>
 <body>
+<header>
   <h1>📈 Ladder App</h1>
-  <div class="tabs">
-    <button id="ladderTab" class="active">Ladders</button>
-    <button id="chartTab">Charts</button>
-  </div>
+</header>
 
-  <!-- Ladder Section -->
-  <div id="Ladders" class="tabcontent active">
-    <h2>Add / Edit Asset</h2>
-    <form id="assetForm">
-      <label>Ticker / Name: <input type="text" id="ticker"></label><br><br>
-      <label>Rungs: 
-        <select id="rungs">
-          <option value="3">3 Rungs</option>
-          <option value="5">5 Rungs</option>
-          <option value="7">7 Rungs</option>
-        </select>
-      </label><br><br>
-      <label>Start Price: <input type="number" id="startPrice" step="0.01"></label><br><br>
-      <button type="submit">+ Add Asset</button>
-    </form>
+<div class="tabs">
+  <button id="tabL" class="active">Ladders</button>
+  <button id="tabC">Charts</button>
+</div>
 
-    <div id="assets"></div>
-  </div>
+<main>
+  <section id="viewL" class="card">
+    <h2 style="margin:0 0 6px">Add / Edit Asset</h2>
+    <div class="sub">Defaults: Sell ladder 2.5%, 4.5%, 7.0% | Buyback 1.0%, 2.5%, 3.5%</div>
+    <label>Ticker / Name</label>
+    <input id="ticker" placeholder="e.g., RIOT or CVS">
+    <label>Rungs</label>
+    <select id="rungs">
+      <option value="3">3 Rungs</option>
+      <option value="2">2 Rungs</option>
+      <option value="4">4 Rungs</option>
+    </select>
+    <label>Cycles per Rung</label>
+    <input id="cycles" type="number" min="1" max="50" value="10">
+    <label>Start Price</label>
+    <input id="start" type="number" step="0.01" placeholder="current price">
+    <button id="add" class="primary" style="margin-top:12px">+ Add Asset</button>
+  </section>
 
-  <!-- Charts Section -->
-  <div id="Charts" class="tabcontent">
-    <h2>Totals & Charts</h2>
-    <p>Chart view will be here (future expansion).</p>
-  </div>
+  <div id="assets"></div>
 
-  <script>
-    // Hardcoded default ladders
-    const defaultSell = [2.5, 4.5, 7];  
-    const defaultBuyback = [1, 2.5, 3.5];
+  <section id="viewC" class="card" style="display:none">
+    <h2 style="margin:0 0 6px">Charts</h2>
+    <p class="sub">Coming from your saved ladder rows. (This view is a placeholder in this cut—your deployed build may already include a full chart.)</p>
+  </section>
 
-    let assets = [];
+  <section class="card">
+    <h3 style="margin:0 0 8px">Why is the first “Planned Buy” below the start?</h3>
+    <p class="sub">The buy price is the <b>buyback % below</b> the start (or last sell). With a 1% buyback and a start of $11.48: $11.48 × (1 − 0.01) = $11.3652 → shown as $11.37 after rounding.</p>
+  </section>
+</main>
 
-    document.getElementById('assetForm').addEventListener('submit', function(e){
-      e.preventDefault();
-      const ticker = document.getElementById('ticker').value;
-      const rungs = parseInt(document.getElementById('rungs').value);
-      const startPrice = parseFloat(document.getElementById('startPrice').value);
+<script>
+const SELL = [2.5, 4.5, 7.0];
+const BUYB = [1.0, 2.5, 3.5];
+let assets = [];
 
-      if(!ticker || !startPrice){ alert("Enter ticker and start price."); return; }
+const $ = id => document.getElementById(id);
+$("add").onclick = () => {
+  const t = $("ticker").value.trim();
+  const r = parseInt($("rungs").value,10);
+  const c = Math.max(1, Math.min(50, parseInt($("cycles").value,10) || 10));
+  const s = parseFloat($("start").value);
+  if(!t || !isFinite(s)){ alert("Enter a ticker and a valid start price."); return; }
 
-      let asset = { ticker, rungs, startPrice, rows: [] };
+  const asset = { t, r, c, s, rows: [] };
+  for(let rung=0; rung<r; rung++){
+    const sellPct = SELL[Math.min(rung, SELL.length-1)];
+    const buyPct  = BUYB[Math.min(rung, BUYB.length-1)];
+    for(let i=1;i<=c;i++){
+      const plannedSell = +(s * (1 + sellPct/100)).toFixed(2);
+      const plannedBuy  = +(s * (1 - buyPct/100)).toFixed(2);
+      const profit      = +(plannedSell - plannedBuy).toFixed(2);
+      asset.rows.push({ rung: rung+1, cycle: i, plannedBuy, plannedSell, profit });
+    }
+  }
+  assets.push(asset);
+  render();
+};
 
-      for(let i=0; i<rungs; i++){
-        let sellPct = defaultSell[i % defaultSell.length];
-        let buyPct = defaultBuyback[i % defaultBuyback.length];
-        let plannedSell = (startPrice * (1 + sellPct/100)).toFixed(2);
-        let plannedBuy = (startPrice * (1 - buyPct/100)).toFixed(2);
-        let profit = (plannedSell - plannedBuy).toFixed(2);
-        asset.rows.push({ cycle: i+1, plannedBuy, plannedSell, profit });
-      }
-
-      assets.push(asset);
-      renderAssets();
-    });
-
-    function renderAssets(){
-      const div = document.getElementById('assets');
-      div.innerHTML = "";
-      assets.forEach(asset => {
-        let html = `<h3>${asset.ticker} — ${asset.rungs} rung(s)</h3>`;
-        html += `<table><tr><th>Cycle</th><th>Planned Buy</th><th>Planned Sell</th><th>Profit</th></tr>`;
-        asset.rows.forEach(r=>{
-          html += `<tr><td>${r.cycle}</td><td>$${r.plannedBuy}</td><td>$${r.plannedSell}</td><td>$${r.profit}</td></tr>`;
-        });
-        html += `</table>`;
-        div.innerHTML += html;
+function render(){
+  const host = $("assets");
+  host.innerHTML = "";
+  assets.forEach(a => {
+    let html = `<section class="card"><h2 style="margin:0 0 8px">${a.t} — ${a.r} rung(s), ${a.c} cycles</h2>`;
+    for(let rung=1; rung<=a.r; rung++){
+      html += `<div class="sub" style="margin-top:6px">Rung ${rung} &nbsp;•&nbsp; Sell +${SELL[Math.min(rung-1,SELL.length-1)]}% &nbsp;•&nbsp; Buyback ${BUYB[Math.min(rung-1,BUYB.length-1)]}%</div>`;
+      html += `<table><thead><tr><th>Cycle</th><th>Planned Buy</th><th>Planned Sell</th><th>Profit/Share</th></tr></thead><tbody>`;
+      a.rows.filter(r=>r.rung===rung).forEach(r=>{
+        html += `<tr><td>${r.cycle}</td><td>$${r.plannedBuy.toFixed(2)}</td><td>$${r.plannedSell.toFixed(2)}</td><td>$${r.profit.toFixed(2)}</td></tr>`;
       });
+      html += `</tbody></table>`;
     }
+    html += `</section>`;
+    host.insertAdjacentHTML("beforeend", html);
+  });
+}
 
-    // Tabs
-    document.getElementById('ladderTab').onclick = () => switchTab('Ladders','ladderTab');
-    document.getElementById('chartTab').onclick = () => switchTab('Charts','chartTab');
-
-    function switchTab(tab, btn){
-      document.querySelectorAll('.tabcontent').forEach(el=>el.classList.remove('active'));
-      document.querySelectorAll('.tabs button').forEach(el=>el.classList.remove('active'));
-      document.getElementById(tab).classList.add('active');
-      document.getElementById(btn).classList.add('active');
-    }
-  </script>
+// tabs
+$("tabL").onclick = ()=>{ $("tabL").classList.add("active"); $("tabC").classList.remove("active"); $("viewL").style.display=""; $("viewC").style.display="none"; };
+$("tabC").onclick = ()=>{ $("tabC").classList.add("active"); $("tabL").classList.remove("active"); $("viewC").style.display=""; $("viewL").style.display="none"; };
+</script>
 </body>
 </html>
