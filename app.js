@@ -1,229 +1,236 @@
-// Ladder App (vanilla JS) — localStorage, CSV export, accordion assets
+// Baseline Ladder App (accordion, basic columns only).
+// No dates, no charts. Multi-asset with per-asset toggle. Auto-saves to localStorage.
+(function () {
+  const $ = (sel, root=document) => root.querySelector(sel);
+  const $$ = (sel, root=document) => [...root.querySelectorAll(sel)];
 
-const SELL_PRESETS = [0.025, 0.045, 0.07, 0.10]; // rung 1..4
-const BUYBACK_PRESETS = [0.01, 0.025, 0.035, 0.05]; // rung 1..4
-const MAX_CYCLES = 20;
+  const STORAGE_KEY = 'ladder_baseline_assets_v1';
 
-const $ = sel => document.querySelector(sel);
-const $$ = sel => Array.from(document.querySelectorAll(sel));
-
-const state = {
-  assets: [] // { id, symbol, start, rungs, defaultShares, rows: [{buy,sell,profit,shares,total}], collapsed: false }
-};
-
-function save() {
-  localStorage.setItem('ladder_app_v3', JSON.stringify(state));
-  $('#status').textContent = 'saved';
-  setTimeout(() => $('#status').textContent = 'ready', 800);
-}
-
-function load() {
-  const raw = localStorage.getItem('ladder_app_v3');
-  if (raw) {
-    try {
-      const s = JSON.parse(raw);
-      if (s && Array.isArray(s.assets)) {
-        state.assets = s.assets;
-      }
-    } catch {}
-  }
-}
-
-function dollars(n) {
-  return (Math.round(n * 100) / 100).toFixed(2);
-}
-
-function buildRows(start, rungIdx, defaultShares) {
-  const rows = [];
-  const sellPct = SELL_PRESETS[rungIdx];
-  const buyPct = BUYBACK_PRESETS[rungIdx];
-
-  let buy = Number(start);
-  for (let i=1; i<=MAX_CYCLES; i++) {
-    const sell = buy * (1 + sellPct);
-    const profit = sell - buy;
-    const shares = defaultShares ?? 1;
-    const total = profit * shares;
-
-    rows.push({
-      cycle: i,
-      buy: Number(dollars(buy)),
-      sell: Number(dollars(sell)),
-      profit: Number(dollars(profit)),
-      shares,
-      total: Number(dollars(total))
-    });
-
-    // next row
-    buy = sell * (1 - buyPct);
-  }
-  return rows;
-}
-
-function upsertAsset(symbol, rungs, start, defaultShares) {
-  const id = symbol.toUpperCase().trim();
-  const i = state.assets.findIndex(a => a.id === id);
-  const base = {
-    id, symbol: id, start: Number(start), rungs: Number(rungs),
-    defaultShares: Number(defaultShares) || 1, collapsed: false, ladders: []
+  const sellPercentsByRungs = {
+    2: [0.025, 0.045],          // rung1, rung2
+    3: [0.025, 0.045, 0.07],    // rung1..3
+    4: [0.025, 0.045, 0.07, 0.10]
   };
-  base.ladders = [];
-  for (let r=0; r<Number(rungs); r++) {
-    base.ladders.push({
-      rung: r+1,
-      sellPct: SELL_PRESETS[r],
-      buyPct: BUYBACK_PRESETS[r],
-      rows: buildRows(start, r, base.defaultShares)
-    });
+  const buybackPercentsByRungs = {
+    2: [0.01, 0.025],
+    3: [0.01, 0.025, 0.035],
+    4: [0.01, 0.025, 0.035, 0.05]
+  };
+  const CYCLES = 20;
+
+  const state = {
+    assets: load() // [{id, name, startPrice, rungs, defaultShares, rows: [...] }]
+  };
+
+  function load() {
+    try {
+      const s = localStorage.getItem(STORAGE_KEY);
+      return s ? JSON.parse(s) : [];
+    } catch (e) { return []; }
   }
-  if (i >= 0) state.assets[i] = base; else state.assets.unshift(base);
-  save();
-  render();
-}
+  function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.assets));
+    $('#ready').textContent = 'saved';
+    setTimeout(()=>$('#ready').textContent='ready',700);
+  }
 
-function deleteAsset(id) {
-  state.assets = state.assets.filter(a => a.id !== id);
-  save(); render();
-}
+  // Helpers
+  const toNum = (v, d=0) => {
+    const n = typeof v==='number' ? v : parseFloat(String(v).replace(/[^\d.-]/g,''));
+    return isFinite(n) ? n : d;
+  };
+  const money = v => '$' + toNum(v).toFixed(2);
+  const calcRows = (start, sellPct, buybackPct, cycles, defaultShares) => {
+    const rows = [];
+    let buy = toNum(start);
+    for (let i=0;i<cycles;i++) {
+      const sell = buy * (1 + sellPct);
+      const profit = sell - buy;
+      rows.push({
+        buy: round(buy), sell: round(sell),
+        profit: round(profit),
+        shares: toNum(defaultShares, 1),
+      });
+      buy = sell * (1 - buybackPct); // next cycle's buy
+    }
+    return rows;
+  };
+  const round = (n) => Math.round(n*100)/100;
 
-function toggleAsset(id) {
-  const a = state.assets.find(x => x.id === id);
-  if (!a) return;
-  a.collapsed = !a.collapsed;
-  save(); render();
-}
+  function buildAsset({name, startPrice, rungs, defaultShares}) {
+    const id = name.trim().toUpperCase();
+    const sells = sellPercentsByRungs[rungs];
+    const buys  = buybackPercentsByRungs[rungs];
+    const r = [];
+    for (let i=0;i<rungs;i++) {
+      r.push({
+        rung: i+1,
+        sellPct: sells[i],
+        buybackPct: buys[i],
+        rows: calcRows(startPrice, sells[i], buys[i], CYCLES, defaultShares)
+      });
+    }
+    return { id, name: id, startPrice: toNum(startPrice), rungs, defaultShares: toNum(defaultShares,1), rungsData: r, open: true };
+  }
 
-function exportCSV() {
-  // Flatten to rows
-  const lines = [];
-  lines.push(['Ticker','Rung','Cycle','Planned Buy','Planned Sell','Profit/Share','Planned Shares','Planned Total'].join(','));
-  state.assets.forEach(a => {
-    a.ladders.forEach(l => {
-      l.rows.forEach(row => {
-        lines.push([a.symbol, l.rung, row.cycle, row.buy, row.sell, row.profit, row.shares, row.total].join(','));
+  // UI wiring
+  function render() {
+    const wrap = $('#assets');
+    wrap.innerHTML = '';
+    if (state.assets.length===0) {
+      wrap.innerHTML = '<div class="card" style="text-align:center;color:#6a737d">No assets yet.</div>';
+      return;
+    }
+    state.assets.forEach(asset => wrap.appendChild(renderAssetCard(asset)));
+  }
+
+  function renderAssetCard(asset) {
+    const card = document.createElement('section');
+    card.className = 'card assets-card';
+    card.dataset.id = asset.id;
+
+    const head = document.createElement('div');
+    head.className = 'asset-head';
+    const metas = document.createElement('div'); metas.className = 'asset-metas';
+    metas.innerHTML = `<span class="badge">${asset.name}</span>
+      <span class="badge">${asset.rungs} rung(s)</span>
+      <span class="badge">start ${money(asset.startPrice)}</span>`;
+    const actions = document.createElement('div'); actions.className = 'asset-actions';
+    const toggleBtn = btn('Toggle', 'toggle');
+    const rebuildBtn = btn('Build Ladder');
+    const delBtn = btn('Delete Ladder','danger');
+    actions.append(toggleBtn, rebuildBtn, delBtn);
+
+    head.append(metas, actions);
+    card.appendChild(head);
+
+    const body = document.createElement('div');
+    body.style.display = asset.open ? 'block' : 'none';
+    body.appendChild(renderRungs(asset));
+    card.appendChild(body);
+
+    // Events
+    toggleBtn.onclick = () => { asset.open = !asset.open; body.style.display = asset.open?'block':'none'; save(); };
+    rebuildBtn.onclick = () => { rebuild(asset); body.innerHTML=''; body.appendChild(renderRungs(asset)); save(); };
+    delBtn.onclick = () => { state.assets = state.assets.filter(a=>a.id!==asset.id); save(); render(); };
+
+    return card;
+  }
+
+  function renderRungs(asset) {
+    const wrap = document.createElement('div');
+    asset.rungsData.forEach(rd => {
+      const section = document.createElement('div');
+      section.style.marginTop = '.6rem';
+      section.innerHTML = `<div class="badge">Rung ${rd.rung} • Sell +${(rd.sellPct*100).toFixed(1)}% • Buyback ${(rd.buybackPct*100).toFixed(1)}%</div>`;
+      section.appendChild(renderTable(asset, rd));
+      wrap.appendChild(section);
+    });
+    return wrap;
+  }
+
+  function renderTable(asset, rd) {
+    const table = document.createElement('table');
+    table.className = 'table';
+    table.innerHTML = `<thead><tr>
+      <th>#</th>
+      <th>Planned Buy</th>
+      <th>Planned Sell</th>
+      <th>Profit/Share</th>
+      <th>Planned Shares</th>
+      <th>Planned Total</th>
+    </tr></thead>`;
+    const tb = document.createElement('tbody');
+    rd.rows.forEach((row, idx) => {
+      const tr = document.createElement('tr');
+
+      const c1 = document.createElement('td'); c1.textContent = idx+1; tr.appendChild(c1);
+
+      const buyTd = document.createElement('td');
+      const buyIn = document.createElement('input');
+      buyIn.value = row.buy.toFixed(2);
+      buyIn.onchange = () => { row.buy = toNum(buyIn.value, row.buy); row.profit = round(row.sell-row.buy); totalTd.textContent = money(row.profit * row.shares); save(); };
+      buyTd.appendChild(buyIn); tr.appendChild(buyTd);
+
+      const sellTd = document.createElement('td');
+      const sellIn = document.createElement('input');
+      sellIn.value = row.sell.toFixed(2);
+      sellIn.onchange = () => { row.sell = toNum(sellIn.value, row.sell); row.profit = round(row.sell-row.buy); totalTd.textContent = money(row.profit * row.shares); save(); };
+      sellTd.appendChild(sellIn); tr.appendChild(sellTd);
+
+      const profitTd = document.createElement('td'); profitTd.className='amount'; profitTd.textContent = money(row.profit); tr.appendChild(profitTd);
+
+      const sharesTd = document.createElement('td');
+      const sharesIn = document.createElement('input');
+      sharesIn.value = String(row.shares);
+      sharesIn.onchange = () => { row.shares = toNum(sharesIn.value, row.shares); totalTd.textContent = money(row.profit * row.shares); save(); };
+      sharesTd.appendChild(sharesIn); tr.appendChild(sharesTd);
+
+      const totalTd = document.createElement('td'); totalTd.className='amount'; totalTd.textContent = money(row.profit * row.shares); tr.appendChild(totalTd);
+
+      tb.appendChild(tr);
+    });
+    table.appendChild(tb);
+    return table;
+  }
+
+  function rebuild(asset) {
+    const sells = sellPercentsByRungs[asset.rungs];
+    const buys  = buybackPercentsByRungs[asset.rungs];
+    asset.rungsData = sells.map((sp, i) => ({
+      rung: i+1,
+      sellPct: sp,
+      buybackPct: buys[i],
+      rows: calcRows(asset.startPrice, sp, buys[i], CYCLES, asset.defaultShares)
+    }));
+  }
+
+  // Add/Replace
+  $('#addAsset').onclick = () => {
+    const name = $('#ticker').value.trim();
+    const start = toNum($('#startPrice').value);
+    const rungs = parseInt($('#rungs').value,10);
+    const defShares = toNum($('#defaultShares').value, 1);
+    if (!name || !isFinite(start)) {
+      alert('Enter a ticker and a numeric start price.');
+      return;
+    }
+    // Replace if exists
+    state.assets = state.assets.filter(a => a.id !== name.toUpperCase());
+    const asset = buildAsset({name, startPrice:start, rungs, defaultShares:defShares});
+    state.assets.unshift(asset);
+    save();
+    render();
+    // Clear inputs except ticker (handy when adding multiple similar)
+    $('#startPrice').value = '';
+  };
+
+  // Export CSV of the currently visible assets (basic columns)
+  $('#exportAll').onclick = () => {
+    if (!state.assets.length) { alert('No data'); return; }
+    const rows = [['Asset','Rung','#','Planned Buy','Planned Sell','Profit/Share','Planned Shares','Planned Total']];
+    state.assets.forEach(a => {
+      a.rungsData.forEach(rd => {
+        rd.rows.forEach((r,i)=>{
+          rows.push([a.name, rd.rung, i+1, r.buy, r.sell, r.profit, r.shares, (r.profit*r.shares)]);
+        });
       });
     });
-  });
-  const csv = lines.join('\n');
-  const blob = new Blob([csv], {type:'text/csv'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = 'ladder_export.csv';
-  document.body.appendChild(a); a.click(); a.remove();
-  URL.revokeObjectURL(url);
-}
-
-function backupJSON() {
-  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = 'ladder_backup.json';
-  document.body.appendChild(a); a.click(); a.remove();
-  URL.revokeObjectURL(url);
-}
-
-function restoreJSON() {
-  const inp = document.createElement('input');
-  inp.type = 'file'; inp.accept = 'application/json';
-  inp.onchange = e => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const s = JSON.parse(reader.result);
-        if (s && Array.isArray(s.assets)) {
-          state.assets = s.assets;
-          save(); render();
-        } else { alert('Invalid backup JSON'); }
-      } catch { alert('Could not parse JSON'); }
-    };
-    reader.readAsText(file);
+    const csv = rows.map(r=>r.join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'ladder_export.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 1000);
   };
-  inp.click();
-}
 
-// ---------- Rendering ----------
-function render() {
-  const $assets = $('#assets');
-  $assets.innerHTML = '';
-  const tmpl = $('#assetTemplate');
+  $('#clearAll').onclick = () => {
+    if (!confirm('Clear all ladders on this device?')) return;
+    state.assets = []; save(); render();
+  };
 
-  state.assets.forEach(asset => {
-    const node = tmpl.content.cloneNode(true);
-    node.querySelector('.asset-title').textContent = asset.symbol;
-    node.querySelector('.badge.rungs').textContent = `${asset.rungs} rung(s)`;
-    node.querySelector('.badge.start').textContent = `start $${dollars(asset.start)}`;
-    node.querySelector('.sellPerc').textContent = SELL_PRESETS.slice(0,asset.rungs).map(p=>`+${(p*100).toFixed(1)}%`).join(', ');
-    node.querySelector('.buyPerc').textContent = BUYBACK_PRESETS.slice(0,asset.rungs).map(p=>`${(p*100).toFixed(1)}%`).join(', ');
-
-    // Accordion
-    const body = node.querySelector('.asset-body');
-    const toggleBtn = node.querySelector('.accordion-toggle');
-    toggleBtn.addEventListener('click', () => toggleAsset(asset.id));
-    if (asset.collapsed) body.style.display = 'none';
-
-    // Delete
-    node.querySelector('.delete').addEventListener('click', () => {
-      if (confirm(`Delete ${asset.symbol}?`)) deleteAsset(asset.id);
-    });
-
-    // Renders only rung 1 table for now (keeps DOM lighter on mobile)
-    const tableBody = node.querySelector('tbody');
-    const rung1 = asset.ladders[0];
-    node.querySelector('.sellTag').textContent = `Sell +${(rung1.sellPct*100).toFixed(1)}%`;
-    node.querySelector('.buyTag').textContent = `Buyback ${(rung1.buyPct*100).toFixed(1)}%`;
-    node.querySelectorAll('.asset-name').forEach(el=>el.textContent = asset.symbol);
-
-    rung1.rows.forEach(row => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${row.cycle}</td>
-        <td><input value="${row.buy.toFixed(2)}" /></td>
-        <td><input value="${row.sell.toFixed(2)}" /></td>
-        <td>$${row.profit.toFixed(2)}</td>
-        <td><input value="${row.shares}" /></td>
-        <td>$${row.total.toFixed(2)}</td>
-      `;
-      tableBody.appendChild(tr);
-    });
-
-    $assets.appendChild(node);
-  });
-}
-
-function wire() {
-  // Tabs
-  $$('.tab').forEach(btn => btn.addEventListener('click', () => {
-    $$('.tab').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    const tab = btn.dataset.tab;
-    $$('.tabpane').forEach(p=>p.classList.remove('active'));
-    $('#'+tab).classList.add('active');
-  }));
-
-  $('#addAsset').addEventListener('click', () => {
-    const t = $('#ticker').value.trim();
-    const r = $('#rungs').value;
-    const s = $('#startPrice').value;
-    const d = $('#defaultShares').value || 1;
-    if (!t) return alert('Enter a ticker / name');
-    if (!s) return alert('Enter a start price');
-    upsertAsset(t, r, s, d);
-    $('#ticker').value='';
-  });
-
-  $('#exportCsv').addEventListener('click', exportCSV);
-  $('#saveBackup').addEventListener('click', backupJSON);
-  $('#restoreBackup').addEventListener('click', restoreJSON);
-  $('#clearAll').addEventListener('click', () => {
-    if (confirm('Clear all data saved on this device?')) {
-      state.assets = []; save(); render();
-    }
-  });
-}
-
-// Boot
-load();
-wire();
-render();
+  // Initial render
+  render();
+})();

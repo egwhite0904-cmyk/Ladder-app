@@ -1,262 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Ladder App (Classic – 3 rungs)</title>
-<style>
-  :root{
-    --bg:#f7fafc;--card:#ffffff;--primary:#118a2b;--danger:#c0392b;--muted:#94a3b8;
-    --border:#e5e7eb;--text:#0f172a;--accent:#2563eb;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Inter,Arial,sans-serif}
-  header{position:sticky;top:0;background:linear-gradient(180deg,#0ea264,#0b8a55);color:#fff;padding:14px 16px;z-index:10}
-  header h1{margin:0;font-size:22px;letter-spacing:.3px}
-  main{max-width:1100px;margin:16px auto;padding:0 12px}
-  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
-  .row{display:flex;gap:12px;flex-wrap:wrap}
-  .col{flex:1 1 180px;min-width:180px}
-  label{font-size:13px;color:#475569;margin-bottom:6px;display:block}
-  input,select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;font-size:16px}
-  .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
-  .btn{border:0;border-radius:10px;padding:10px 14px;font-weight:600}
-  .btn-primary{background:var(--primary);color:#fff}
-  .btn-danger{background:var(--danger);color:#fff}
-  .btn-outline{background:#fff;border:1px solid var(--border);color:#0f172a}
-  .help{font-size:13px;color:#64748b}
-  table{width:100%;border-collapse:separate;border-spacing:0 10px}
-  thead th{font-size:13px;color:#475569;text-align:left;padding:6px 8px}
-  tbody td{background:#fff;border:1px solid var(--border);border-left-width:1px}
-  tbody td:first-child{border-top-left-radius:10px;border-bottom-left-radius:10px}
-  tbody td:last-child{border-top-right-radius:10px;border-bottom-right-radius:10px}
-  tbody td{padding:6px}
-  .num{width:120px} /* wide fields so full dollars show, even 4-6 digits */
-  .num.small{width:90px}
-  .num.long{width:160px}
-  .pill{display:inline-block;background:#eef2ff;color:#3730a3;border-radius:999px;padding:3px 8px;font-size:12px;margin-left:6px}
-  .rung-title{font-weight:700;margin:6px 0 10px}
-  .totals{font-weight:700}
-  .footer-note{color:#64748b;font-size:12px;margin-top:8px}
-  .hide{display:none}
-  .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ladder App</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-<header><h1>📈 Ladder App — Classic (3 rungs)</h1></header>
-<main>
-  <section class="card">
-    <div class="row">
-      <div class="col">
-        <label>Ticker / Name</label>
-        <input id="ticker" placeholder="e.g., RIOT">
+  <header class="topbar">
+    <img src="ladder.svg" class="logo" alt="Ladder logo" />
+    <h1>Ladder App</h1>
+    <span id="ready" class="pill">ready</span>
+  </header>
+
+  <main class="container">
+    <section class="controls card">
+      <h2>Add / Replace Asset</h2>
+      <div class="grid">
+        <label>Ticker / Name
+          <input id="ticker" placeholder="e.g., RIOT or COIN" />
+        </label>
+        <label>Rungs
+          <select id="rungs">
+            <option value="2">2 rungs</option>
+            <option value="3" selected>3 rungs</option>
+            <option value="4">4 rungs</option>
+          </select>
+        </label>
+        <label>Start Price
+          <input id="startPrice" placeholder="current price" inputmode="decimal" />
+        </label>
+        <label>Default Shares / row
+          <input id="defaultShares" value="1" inputmode="numeric" />
+        </label>
       </div>
-      <div class="col">
-        <label>Start Price</label>
-        <input id="startPrice" type="number" step="0.01" placeholder="11.48">
+
+      <div class="note">
+        <strong>Presets (locked)</strong>: Sell +2.5%, +4.5%, +7% (+10% when 4 rungs). 
+        Buyback 1%, 2.5%, 3.5%, 5% (rungs 1–4). 20 cycles. 
+        Row 1 Planned Buy equals Start Price; each next row uses:<br/>
+        <code>nextBuy = prevSell × (1 − buyback%)</code> and 
+        <code>sell = buy × (1 + sell%)</code>.
       </div>
-      <div class="col">
-        <label>Default Shares / row</label>
-        <input id="defaultQty" type="number" step="1" value="1">
+
+      <div class="row">
+        <button id="addAsset" class="btn primary">+ Add / Replace Asset</button>
+        <button id="exportAll" class="btn">Export CSV (Excel)</button>
+        <button id="clearAll" class="btn danger">Clear All (this device)</button>
       </div>
-    </div>
-    <p class="help mono">
-      Presets (locked): Sell +2.5%, +4.5%, +7%. Buyback 1%, 2.5%, 3.5% (rungs 1–3). 20 cycles. Row 1 Planned Buy equals Start Price.
-      Each next row uses: <span class="pill">nextBuy = prevSell × (1 − buyback%)</span> and <span class="pill">sell = buy × (1 + sell%)</span>.
-    </p>
-    <div class="btns">
-      <button class="btn btn-primary" id="buildBtn">Build Ladder</button>
-      <button class="btn btn-outline" id="exportBtn">Export CSV (Excel)</button>
-      <button class="btn btn-danger" id="clearBtn">Delete Ladder</button>
-    </div>
-  </section>
+    </section>
 
-  <section class="card" id="ladderWrap">
-    <div id="assetHeader" class="rung-title">No ladder yet.</div>
-    <div id="rungs"></div>
-    <div class="footer-note">Auto-saves on this device.</div>
-  </section>
-</main>
+    <section id="assets"></section>
+  </main>
 
-<script>
-// --- constants (locked like the old app) ---
-const SELL_PCT = [0.025, 0.045, 0.07];     // rung 1..3
-const BUYBACK_PCT = [0.01, 0.025, 0.035];  // rung 1..3
-const CYCLES = 20;
+  <footer class="foot">Data auto-saves on this device.</footer>
 
-const els = {
-  ticker: document.getElementById('ticker'),
-  startPrice: document.getElementById('startPrice'),
-  defaultQty: document.getElementById('defaultQty'),
-  buildBtn: document.getElementById('buildBtn'),
-  exportBtn: document.getElementById('exportBtn'),
-  clearBtn: document.getElementById('clearBtn'),
-  rungs: document.getElementById('rungs'),
-  header: document.getElementById('assetHeader')
-};
-
-function fmt(n){ return (isFinite(n) ? n.toFixed(2) : ''); }
-function money(n){ return '$' + fmt(n); }
-
-function buildOneRung(rungIndex, startPrice, defaultQty){
-  const sellPct = SELL_PCT[rungIndex];
-  const buyback = BUYBACK_PCT[rungIndex];
-
-  let rows = [];
-  let buy = startPrice;
-  for(let i=1;i<=CYCLES;i++){
-    const sell = buy * (1 + sellPct);
-    const profit = sell - buy;
-    rows.push({
-      cycle:i,
-      plannedBuy: +fmt(buy),
-      plannedSell: +fmt(sell),
-      profitShare: +fmt(profit),
-      plannedShares: defaultQty,
-      plannedTotal: +fmt(profit * defaultQty),
-      buyDate:'',
-      sellDate:'',
-      actualBuy:'',
-      actualSell:'',
-      filledQty:'',
-      realizedPL:'',
-      deltaVsPlan:'',
-      cumRealized:''
-    });
-    buy = sell * (1 - buyback);
-  }
-  return rows;
-}
-
-function renderTable(rungName, rows){
-  const tbl = document.createElement('table');
-  tbl.innerHTML = `
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Planned Buy</th>
-        <th>Planned Sell</th>
-        <th>Profit/Share</th>
-        <th>Planned Shares</th>
-        <th>Planned Total</th>
-        <th>Buy Date</th>
-        <th>Sell Date</th>
-        <th>Actual Buy</th>
-        <th>Actual Sell</th>
-        <th>Filled Qty</th>
-        <th>Realized P/L</th>
-        <th>Δ vs Plan</th>
-        <th>Cum Realized</th>
-      </tr>
-    </thead>
-    <tbody></tbody>`;
-  const tb = tbl.querySelector('tbody');
-
-  rows.forEach(r => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td class="mono" style="width:48px">${r.cycle}</td>
-      <td><input class="num long" value="${fmt(r.plannedBuy)}"></td>
-      <td><input class="num long" value="${fmt(r.plannedSell)}"></td>
-      <td class="mono">${money(r.profitShare)}</td>
-      <td><input class="num small" value="${r.plannedShares}"></td>
-      <td class="mono totals">${money(r.plannedTotal)}</td>
-      <td><input class="num" placeholder="Aug 22, 2025" value="${r.buyDate}"></td>
-      <td><input class="num" placeholder="Aug 25, 2025" value="${r.sellDate}"></td>
-      <td><input class="num long" value="${r.actualBuy}"></td>
-      <td><input class="num long" value="${r.actualSell}"></td>
-      <td><input class="num small" value="${r.filledQty}"></td>
-      <td class="mono">${r.realizedPL}</td>
-      <td class="mono">${r.deltaVsPlan}</td>
-      <td class="mono">${r.cumRealized}</td>
-    `;
-    tb.appendChild(tr);
-  });
-
-  const wrap = document.createElement('div');
-  const title = document.createElement('div');
-  title.className = 'rung-title';
-  title.textContent = rungName + '  —  Sell ' + (SELL_PCT[['Rung 1','Rung 2','Rung 3'].indexOf(rungName)]*100).toFixed(1) + '% · Buyback ' + (BUYBACK_PCT[['Rung 1','Rung 2','Rung 3'].indexOf(rungName)]*100).toFixed(1) + '%';
-  wrap.appendChild(title);
-  wrap.appendChild(tbl);
-  return wrap;
-}
-
-function buildLadder(){
-  const t = els.ticker.value.trim();
-  const start = parseFloat(els.startPrice.value);
-  const qty = parseInt(els.defaultQty.value||'1',10);
-
-  if(!t){ alert('Enter a ticker'); return; }
-  if(!isFinite(start)){ alert('Enter a valid start price'); return; }
-
-  els.rungs.innerHTML='';
-  els.header.textContent = `${t} — 3 rungs • start ${money(start)}`;
-
-  const rung1 = buildOneRung(0, start, qty);
-  const rung2 = buildOneRung(1, start, qty);
-  const rung3 = buildOneRung(2, start, qty);
-
-  els.rungs.appendChild(renderTable('Rung 1', rung1));
-  els.rungs.appendChild(renderTable('Rung 2', rung2));
-  els.rungs.appendChild(renderTable('Rung 3', rung3));
-
-  // Save
-  const state = { t, start, qty, rung1, rung2, rung3 };
-  localStorage.setItem('ladder_classic_v1', JSON.stringify(state));
-}
-
-function restore(){
-  const raw = localStorage.getItem('ladder_classic_v1');
-  if(!raw) return;
-  try{
-    const s = JSON.parse(raw);
-    els.ticker.value = s.t;
-    els.startPrice.value = s.start;
-    els.defaultQty.value = s.qty;
-    // Rebuild UI from data to keep things simple
-    els.rungs.innerHTML='';
-    els.header.textContent = `${s.t} — 3 rungs • start ${money(s.start)}`;
-    els.rungs.appendChild(renderTable('Rung 1', s.rung1));
-    els.rungs.appendChild(renderTable('Rung 2', s.rung2));
-    els.rungs.appendChild(renderTable('Rung 3', s.rung3));
-  }catch(e){ console.warn(e); }
-}
-
-function exportCSV(){
-  const raw = localStorage.getItem('ladder_classic_v1');
-  if(!raw){ alert('Nothing to export yet. Build a ladder first.'); return; }
-  const s = JSON.parse(raw);
-  const rows = [['Rung','Cycle','Planned Buy','Planned Sell','Profit/Share','Planned Shares','Planned Total','Buy Date','Sell Date','Actual Buy','Actual Sell','Filled Qty','Realized P/L','Delta vs Plan','Cum Realized']];
-  ['rung1','rung2','rung3'].forEach((rk,i)=>{
-    s[rk].forEach(r=>{
-      rows.push([`Rung ${i+1}`, r.cycle, r.plannedBuy, r.plannedSell, r.profitShare, r.plannedShares, r.plannedTotal, r.buyDate, r.sellDate, r.actualBuy, r.actualSell, r.filledQty, r.realizedPL, r.deltaVsPlan, r.cumRealized]);
-    });
-  });
-  const csv = rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob = new Blob([csv], {type:'text/csv'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = (s.t||'ladder') + '_classic.csv';
-  document.body.appendChild(a);
-  a.click();
-  URL.revokeObjectURL(url);
-  a.remove();
-}
-
-function clearAll(){
-  if(confirm('Delete the current ladder from this device?')){
-    localStorage.removeItem('ladder_classic_v1');
-    els.rungs.innerHTML='';
-    els.header.textContent = 'No ladder yet.';
-  }
-}
-
-els.buildBtn.addEventListener('click', buildLadder);
-els.exportBtn.addEventListener('click', exportCSV);
-els.clearBtn.addEventListener('click', clearAll);
-restore();
-</script>
+  <script src="app.js"></script>
 </body>
 </html>
