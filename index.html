@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ladder App (Single-File)</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; background: #f8f9fa; }
+  h1 { color: #0b8bd7; }
+  .panel { background: #fff; padding: 15px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; }
+  .row > div { flex: 1; min-width: 150px; }
+  label { font-size: 12px; display: block; margin-bottom: 4px; }
+  input, select, button { padding: 8px; font-size: 14px; width: 100%; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+  th { background: #f1f1f1; }
+</style>
+</head>
+<body>
+  <h1>📈 Ladder App</h1>
+
+  <div class="panel">
+    <div class="row">
+      <div><label>Ticker / Name</label><input id="inTicker" placeholder="RIOT"></div>
+      <div><label>Rungs</label>
+        <select id="inRungs">
+          <option value="2">2</option>
+          <option value="3" selected>3</option>
+          <option value="4">4</option>
+        </select>
+      </div>
+      <div><label>Start Price</label><input id="inStart" type="number" step="0.01"></div>
+      <div><label>Shares</label><input id="inShares" type="number" value="1"></div>
+    </div>
+    <button onclick="addAsset()">Add Asset</button>
+  </div>
+
+  <div id="assets"></div>
+
+<script>
+let assets = [];
+
+function addAsset() {
+  const ticker = document.getElementById('inTicker').value;
+  const rungs = parseInt(document.getElementById('inRungs').value);
+  const start = parseFloat(document.getElementById('inStart').value);
+  const shares = parseInt(document.getElementById('inShares').value);
+
+  if (!ticker || isNaN(start)) return alert("Enter valid values");
+
+  const ladder = [];
+  let buy = start;
+  for (let i = 0; i < 20; i++) {
+    let sell = buy * (1 + 0.025); // 2.5% sell
+    ladder.push({ buy: buy.toFixed(2), sell: sell.toFixed(2), profit: (sell - buy).toFixed(2) });
+    buy = sell * (1 - 0.01); // 1% buyback
+  }
+
+  assets.push({ ticker, ladder, shares, rungs });
+  renderAssets();
+}
+
+function renderAssets() {
+  let out = "";
+  assets.forEach(a => {
+    out += `<div class="panel"><h3>${a.ticker} (${a.rungs} rung(s))</h3>`;
+    out += `<table><tr><th>#</th><th>Planned Buy</th><th>Planned Sell</th><th>Profit/Share</th></tr>`;
+    a.ladder.forEach((row,i) => {
+      out += `<tr><td>${i+1}</td><td>${row.buy}</td><td>${row.sell}</td><td>$${row.profit}</td></tr>`;
+    });
+    out += `</table></div>`;
+  });
+  document.getElementById('assets').innerHTML = out;
+}
+</script>
+</body>
+</html>
