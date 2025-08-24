@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ladder App</title>
+<style>
+  :root{
+    --bg:#f1f5f9;--card:#ffffff;--text:#0f172a;--muted:#475569;--line:#cbd5e1;
+    --brand:#047857;--danger:#dc2626;--pill:#e2e8f0;
+  }
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif}
+  .nav{position:sticky;top:0;z-index:5;background:linear-gradient(90deg,#11998e,#38ef7d);color:#fff;padding:14px 16px;display:flex;align-items:center;gap:12px}
+  .brand{font-weight:700;font-size:20px}
+  .status-pill{margin-left:auto;background:#16a34a;border-radius:999px;padding:4px 10px;font-size:12px}
+  .container{max-width:980px;margin:14px auto;padding:0 12px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 14px 10px 14px;margin-bottom:14px;box-shadow:0 1px 10px rgba(2,6,23,.05)}
+  h2{margin:0 0 10px 0;font-size:18px}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .form-grid label{display:flex;flex-direction:column;gap:6px}
+  .form-grid span{font-size:12px;color:var(--muted)}
+  .form-grid input,.form-grid select{
+    width:100%;height:44px;font-size:16px;padding:8px 10px;border:1px solid var(--line);
+    border-radius:10px;background:#fff;box-sizing:border-box;
+  }
+  @media (max-width:480px){.form-grid{grid-template-columns:1fr}}
+  .btn{height:46px;border:none;border-radius:12px;padding:0 14px;font-size:16px;cursor:pointer}
+  .btn-primary{background:var(--brand);color:#fff;width:100%;margin-top:10px}
+  .btn-ghost{background:#e2e8f0;color:#0f172a}
+  .flex{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .pill{background:var(--pill);border-radius:999px;padding:6px 10px;font-size:12px;color:#0f172a}
+  .danger{background:var(--danger);color:#fff}
+  table{width:100%;border-collapse:separate;border-spacing:0 10px}
+  th,td{text-align:left}
+  .row{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px}
+  .row-grid{display:grid;grid-template-columns:34px repeat(8,1fr);gap:10px;align-items:center}
+  .row-grid input{width:100%;height:40px;font-size:16px;border:1px solid var(--line);border-radius:8px;padding:6px 8px;box-sizing:border-box}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap}
+  .asset-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+  .right{margin-left:auto}
+  .small{font-size:12px;color:var(--muted)}
+  .footer{padding:20px 0 40px 0;text-align:center;color:var(--muted);font-size:12px}
+  .hide{display:none}
+</style>
+</head>
+<body>
+  <div class="nav">
+    <div class="brand">Ladder App</div>
+    <div class="status-pill">ready</div>
+  </div>
+
+  <div class="container">
+    <!-- New / Replace -->
+    <section class="card">
+      <h2>New / Replace Asset</h2>
+      <form id="assetForm">
+        <div class="form-grid">
+          <label><span>Ticker / Name</span><input id="ticker" placeholder="e.g., RIOT" required></label>
+          <label><span>Rungs</span>
+            <select id="rungs">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3" selected>3</option>
+              <option value="4">4</option>
+            </select>
+          </label>
+          <label><span>Start Price</span><input id="startPrice" type="number" step="0.01" placeholder="current price" required></label>
+          <label><span>Default Shares / row</span><input id="defaultShares" type="number" step="1" min="1" value="1" required></label>
+        </div>
+        <button class="btn btn-primary" type="submit">+ Add / Replace Asset</button>
+      </form>
+      <div class="small" style="margin-top:8px">
+        Presets (locked): Sell +2.5%, +4.5%, +7.0%, +10% (rungs 1–4). Buyback 1%, 2.5%, 3.5%, 5% (rungs 1–4). 20 cycles.
+        Row 1 Planned Buy equals <b>Start Price</b>. Each next row:
+        <code>nextBuy = prevSell × (1 − buyback%)</code> and
+        <code>sell = buy × (1 + sell%)</code>. Edit any cell inline.
+      </div>
+      <div class="toolbar" style="margin-top:10px">
+        <button id="saveBtn" class="btn btn-ghost">Save Backup (JSON)</button>
+        <button id="restoreBtn" class="btn btn-ghost">Restore Backup (JSON)</button>
+        <button id="csvBtn" class="btn btn-ghost">Export CSV (Excel)</button>
+        <button id="clearBtn" class="btn danger">Clear All (this device)</button>
+      </div>
+    </section>
+
+    <div id="assets"></div>
+
+    <div class="footer">egwhite0904-cmyk.github.io • single-file build</div>
+  </div>
+
+<script>
+// ---------- Helpers ----------
+const $ = sel => document.querySelector(sel);
+const pad = n => String(n).padStart(2,'0');
+function fmtMoney(n){ return isFinite(n) ? '$' + n.toFixed(2) : '$0.00'; }
+function today(){ const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+
+// ---------- Data ----------
+let db = load() || { assets: [] };
+
+const SELL_STEPS = [0.025,0.045,0.07,0.10];
+const BUYBACK_STEPS = [0.01,0.025,0.035,0.05];
+const ROWS = 20;
+
+// ---------- Build ladder rows ----------
+function buildRows(startPrice, rungIndex, defaultShares){
+  const sellPct = SELL_STEPS[Math.min(rungIndex, SELL_STEPS.length-1)];
+  const buyback = BUYBACK_STEPS[Math.min(rungIndex, BUYBACK_STEPS.length-1)];
+  const rows = [];
+  let buy = startPrice;
+  for (let i=1;i<=ROWS;i++){
+    const sell = buy * (1 + sellPct);
+    const profitPer = sell - buy;
+    rows.push({
+      n:i,
+      plannedBuy:+buy.toFixed(2),
+      plannedSell:+sell.toFixed(2),
+      profitPer:+profitPer.toFixed(2),
+      plannedShares: defaultShares,
+      plannedTotal:+(profitPer*defaultShares).toFixed(2),
+      buyDate:"",
+      sellDate:"",
+      actualBuy:"",
+      actualSell:"",
+      filledQty:"",
+      realizedPL:"",
+      deltaVsPlan:"",
+      cumRealized:""
+    });
+    buy = sell * (1 - buyback);
+  }
+  return rows;
+}
+
+// ---------- Render ----------
+function render(){
+  const el = $('#assets');
+  el.innerHTML = '';
+  db.assets.forEach((a,idx)=>{
+    const asset = document.createElement('section');
+    asset.className='card';
+    asset.innerHTML = `
+      <div class="asset-head">
+        <span class="pill">${a.name}</span>
+        <span class="pill">${a.rungs} rung(s)</span>
+        <span class="pill">start $${a.startPrice.toFixed(2)}</span>
+        <span class="pill">Sell +${(SELL_STEPS[a.rungs-1]*100).toFixed(1)}%</span>
+        <span class="pill">Buyback ${(BUYBACK_STEPS[a.rungs-1]*100).toFixed(1)}%</span>
+        <span class="right"></span>
+        <button class="btn btn-ghost" data-i="${idx}" data-act="toggle">Toggle</button>
+        <button class="btn danger" data-i="${idx}" data-act="delete">Delete</button>
+      </div>
+      <div class="asset-body ${a.closed?'hide':''}" data-body="${idx}">
+        ${a.rungsHTML}
+      </div>
+    `;
+    el.appendChild(asset);
+  });
+  // wire buttons
+  el.querySelectorAll('button[data-act="toggle"]').forEach(b=>b.onclick=(e)=>{
+    const i = +e.currentTarget.dataset.i;
+    db.assets[i].closed = !db.assets[i].closed;
+    save(); render();
+  });
+  el.querySelectorAll('button[data-act="delete"]').forEach(b=>b.onclick=(e)=>{
+    const i = +e.currentTarget.dataset.i;
+    db.assets.splice(i,1); save(); render();
+  });
+}
+
+// Build a single rung table HTML
+function rungTableHTML(rows, rungNum){
+  const head = `
+    <div class="row row-head">
+      <div class="row-grid" style="font-weight:600">
+        <div>#</div>
+        <div>Planned Buy</div>
+        <div>Planned Sell</div>
+        <div>Profit/Share</div>
+        <div>Planned Shares</div>
+        <div>Planned Total</div>
+        <div>Buy Date</div>
+        <div>Sell Date</div>
+        <div>Cum Realized</div>
+      </div>
+    </div>`;
+  const body = rows.map(r=>`
+    <div class="row">
+      <div class="row-grid">
+        <div>${r.n}</div>
+        <input value="${r.plannedBuy}">
+        <input value="${r.plannedSell}">
+        <div>${fmtMoney(r.profitPer)}</div>
+        <input value="${r.plannedShares}">
+        <div>${fmtMoney(r.plannedTotal)}</div>
+        <input type="date" value="${r.buyDate||''}">
+        <input type="date" value="${r.sellDate||''}">
+        <div>${r.cumRealized?fmtMoney(+r.cumRealized):fmtMoney(0)}</div>
+      </div>
+    </div>
+  `).join('');
+  return `<h3 style="margin:6px 2px 8px 2px">Rung ${rungNum}</h3>${head}${body}`;
+}
+
+// Create/replace asset
+function addOrReplaceAsset(evt){
+  if (evt) evt.preventDefault();
+  const name = $('#ticker').value.trim();
+  const rungs = parseInt($('#rungs').value,10);
+  const startPrice = parseFloat($('#startPrice').value);
+  const defaultShares = parseInt($('#defaultShares').value,10)||1;
+  if(!name || !isFinite(rungs) || !isFinite(startPrice)) return;
+
+  // precompute rung HTML (so rendering is fast)
+  let rungsHTML = '';
+  for(let i=1;i<=rungs;i++){
+    const rows = buildRows(startPrice, i-1, defaultShares);
+    rungsHTML += rungTableHTML(rows, i);
+  }
+
+  // replace if name exists
+  const existing = db.assets.findIndex(a=>a.name.toLowerCase()===name.toLowerCase());
+  const record = {name, rungs, startPrice, defaultShares, rungsHTML, closed:false};
+  if (existing>=0) db.assets[existing] = record; else db.assets.push(record);
+
+  save(); render(); cueSaved();
+  // clear ticker only
+  $('#ticker').value='';
+}
+
+// ---------- Persistence ----------
+function save(){
+  localStorage.setItem('ladder_app_singlefile', JSON.stringify(db));
+}
+function load(){
+  const s = localStorage.getItem('ladder_app_singlefile');
+  try{ return s?JSON.parse(s):null }catch(e){ return null }
+}
+function cueSaved(){
+  const pill = document.querySelector('.status-pill');
+  pill.textContent = 'saved'; setTimeout(()=>pill.textContent='ready',900);
+}
+
+// ---------- Backups / CSV ----------
+$('#saveBtn').onclick = ()=>{
+  const blob = new Blob([JSON.stringify(db,null,2)], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `ladder_backup_${Date.now()}.json`; a.click();
+};
+$('#restoreBtn').onclick = ()=>{
+  const inp = document.createElement('input'); inp.type='file'; inp.accept='.json,application/json';
+  inp.onchange = (e)=>{
+    const f = e.target.files[0]; if(!f) return;
+    const r = new FileReader();
+    r.onload = () => { try{ db = JSON.parse(r.result); save(); render(); cueSaved(); }catch(e){ alert('Bad JSON'); } };
+    r.readAsText(f);
+  };
+  inp.click();
+};
+$('#csvBtn').onclick = ()=>{
+  // very simple CSV: asset name + flatten rows text from rungsHTML (best-effort)
+  const rows = [];
+  db.assets.forEach(a=>{
+    rows.push(['Asset',a.name,'Rungs',a.rungs,'Start',a.startPrice]);
+  });
+  const csv = rows.map(r=>r.join(',')).join('\n');
+  const blob = new Blob([csv],{type:'text/csv'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'ladder_export.csv'; a.click();
+};
+$('#clearBtn').onclick = ()=>{ if(confirm('Clear all ladders on this device?')){ db={assets:[]}; save(); render(); } };
+
+// ---------- Wire form ----------
+$('#assetForm').addEventListener('submit', addOrReplaceAsset);
+
+// ---------- First render ----------
+render();
+</script>
+</body>
+</html>
