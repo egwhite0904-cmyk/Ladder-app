@@ -1,1 +1,10 @@
-<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect width='100' height='100' fill='green'/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <g fill="none" stroke="#ffffff" stroke-width="4">
+    <path d="M20 6 L12 58" />
+    <path d="M44 6 L36 58" />
+    <path d="M10 16 H46" />
+    <path d="M8 28 H44" />
+    <path d="M6 40 H42" />
+    <path d="M4 52 H40" />
+  </g>
+</svg>

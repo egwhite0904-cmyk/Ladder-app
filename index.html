@@ -1,12 +1,118 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Ladder App</title>
-  <link rel='stylesheet' href='styles.css'>
+  <link rel="icon" href="ladder.svg">
+  <link rel="stylesheet" href="styles.css?v=1">
 </head>
 <body>
-  <h1>Ladder App</h1>
-  <div id='app'></div>
-  <script src='app.js'></script>
+  <header class="appbar">
+    <div class="brand">
+      <img src="ladder.svg" width="22" height="22" alt="ladder" />
+      <span>Ladder App</span>
+    </div>
+    <nav class="tabs">
+      <button class="tab active" data-tab="ladders">Ladders</button>
+      <button class="tab" data-tab="charts">Charts</button>
+    </nav>
+    <div class="status" id="status">ready</div>
+  </header>
+
+  <main>
+    <section id="ladders" class="tabpane active">
+      <form id="assetForm" class="card">
+        <h2>Add / Replace Asset</h2>
+        <div class="grid">
+          <label>Ticker / Name
+            <input id="ticker" type="text" placeholder="e.g., RIOT or COIN" autocomplete="off">
+          </label>
+
+          <label>Rungs
+            <select id="rungs">
+              <option value="2">2 rungs</option>
+              <option value="3" selected>3 rungs</option>
+              <option value="4">4 rungs</option>
+            </select>
+          </label>
+
+          <label>Start Price
+            <input id="startPrice" type="number" inputmode="decimal" step="0.01" placeholder="current price">
+          </label>
+
+          <label>Default Shares per row
+            <input id="defaultShares" type="number" step="1" min="1" value="1">
+          </label>
+        </div>
+
+        <p class="note">
+          <strong>Presets (locked):</strong> Sell +2.5%, +4.5%, +7%, +10% (rungs 1–4).
+          Buyback 1%, 2.5%, 3.5%, 5% (rungs 1–4). 20 cycles.
+          Row 1 Planned Buy equals Start Price; each next row uses:
+          <code>nextBuy = prevSell × (1 − buyback%)</code> and
+          <code>sell = buy × (1 + sell%)</code>.
+        </p>
+
+        <div class="row btns">
+          <button type="button" id="addAsset" class="primary">+ Add / Replace Asset</button>
+          <button type="button" id="saveBackup" class="secondary">Save Backup (JSON)</button>
+          <button type="button" id="restoreBackup" class="secondary">Restore Backup (JSON)</button>
+          <button type="button" id="exportCsv" class="secondary">Export CSV (Excel)</button>
+          <button type="button" id="clearAll" class="danger">Clear All (this device)</button>
+        </div>
+      </form>
+
+      <div id="assets"></div>
+    </section>
+
+    <section id="charts" class="tabpane">
+      <div class="card">
+        <h2>Charts</h2>
+        <p>Placeholder charts area. (Coming soon)</p>
+      </div>
+    </section>
+  </main>
+
+  <template id="assetTemplate">
+    <section class="asset card">
+      <header class="asset-head">
+        <div class="head-left">
+          <button class="accordion-toggle" aria-expanded="true">Toggle</button>
+          <h3 class="asset-title"></h3>
+          <span class="badge rungs"></span>
+          <span class="badge start"></span>
+        </div>
+        <div class="head-right">
+          <button class="danger delete">Delete Ladder</button>
+        </div>
+      </header>
+
+      <div class="asset-body">
+        <p class="tiny">Rungs use locked defaults: Sell <span class="sellPerc"></span> • Buyback <span class="buyPerc"></span> • 20 cycles. Edit any cell inline.</p>
+
+        <div class="rung" data-rung="1">
+          <h4><span class="asset-name"></span> — Rung 1 • <span class="sellTag"></span> • <span class="buyTag"></span></h4>
+          <div class="table-wrap">
+            <table class="ladder-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Planned Buy</th>
+                  <th>Planned Sell</th>
+                  <th>Profit/Share</th>
+                  <th>Planned Shares</th>
+                  <th>Planned Total</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  </template>
+
+  <script src="app.js?v=1"></script>
 </body>
 </html>
