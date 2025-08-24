@@ -1,275 +1,360 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Ladder App (Single File)</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ladder App</title>
 <style>
   :root{
-    --bg:#f6f8fb;
+    --bg:#f7f8fc;
     --card:#ffffff;
+    --accent:#2e90fa;
+    --accent2:#16a34a;
+    --danger:#e11d48;
+    --muted:#64748b;
     --text:#0f172a;
-    --muted:#6b7280;
-    --accent:#10b981;
-    --danger:#ef4444;
-    --primary:#2563eb;
-    --border:#e5e7eb;
-    --chip:#eef2ff;
+    --radius:14px;
   }
-  *{box-sizing:border-box}
-  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);}
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    background:var(--bg);
+    color:var(--text);
+    line-height:1.25;
+  }
   header{
-    background: linear-gradient(90deg,#06b6d4,#3b82f6);
-    color:#fff;padding:14px 16px;font-weight:800;font-size:22px;
-    position:sticky;top:0;z-index:3;
+    background:linear-gradient(90deg,#00b4d8,#0077ff);
+    color:white;
+    padding:18px 16px;
+    font-size:28px;
+    font-weight:800;
+    letter-spacing:0.3px;
   }
-  .wrap{padding:14px;max-width:960px;margin:0 auto;}
-  .card{background:var(--card);border-radius:14px;border:1px solid var(--border);box-shadow:0 1px 2px rgba(0,0,0,.04);padding:14px;margin:10px 0;}
-  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-  .row label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
-  input[type="text"], input[type="number"]{
-    width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-size:16px;background:#fff;
+  .container{padding:16px;}
+  .card{
+    background:var(--card);
+    border-radius:var(--radius);
+    padding:16px;
+    box-shadow: 0 8px 20px rgba(15,23,42,.06);
+    margin-bottom:16px;
   }
-  .col{flex:1 1 140px;min-width:140px}
-  .btn{border:0;border-radius:12px;padding:12px 14px;font-weight:700;color:#fff;background:var(--accent);}
-  .btn.secondary{background:var(--primary)}
-  .btn.ghost{background:#eef2ff;color:#1f2937}
-  .btn.danger{background:var(--danger)}
-  .chips{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 0}
-  .chip{background:var(--chip);color:#1f2937;border:1px solid var(--border);padding:6px 10px;border-radius:999px;font-size:12px}
-  .asset{margin-top:10px}
-  .asset header{position:relative;border-radius:12px 12px 0 0;padding:10px 12px;background:#fff;color:#111;border:1px solid var(--border);border-bottom:0;background:linear-gradient(90deg,#f8fafc,#f1f5f9)}
-  .asset .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-  .asset .controls .title{font-weight:800;font-size:18px;margin-right:auto}
-  .table-wrap{border:1px solid var(--border);border-top:0;background:#fff;border-radius:0 0 12px 12px;overflow-x:auto}
-  table{width:860px;border-collapse:separate;border-spacing:0}
-  colgroup col:nth-child(1){width:50px}
-  colgroup col:nth-child(2){width:140px}
-  colgroup col:nth-child(3){width:140px}
-  colgroup col:nth-child(4){width:120px}
-  colgroup col:nth-child(5){width:140px}
-  colgroup col:nth-child(6){width:140px}
-  thead th{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--border);text-align:left;padding:12px 10px;font-size:13px;color:#111;z-index:1}
-  tbody td{border-top:1px solid var(--border);padding:10px}
-  td input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-size:16px;background:#fff}
-  .right{text-align:right}
-  .mono{font-variant-numeric:tabular-nums}
-  .muted{color:var(--muted);font-size:12px}
-  .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+  .row{display:flex; gap:12px; flex-wrap:wrap;}
+  .col{flex:1 1 140px; min-width:140px;}
+  label{display:block; font-weight:700; font-size:14px; margin:0 0 6px; color:var(--muted);}
+  input[type="text"], input[type="number"], select{
+    width:100%; padding:12px 14px; border-radius:12px; border:1px solid #e5e7eb; background:#fff; font-size:16px;
+  }
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    padding:12px 16px; border-radius:12px; border:0; color:#fff; background:var(--accent2);
+    font-weight:700; font-size:16px;
+  }
+  .btn.secondary{background:var(--accent);}
+  .btn.danger{background:var(--danger);}
+  .btn.ghost{background:#eef2ff; color:#1e40af;}
+  .btn.small{font-size:14px; padding:8px 12px; border-radius:10px;}
+  .pill{display:inline-block; padding:8px 12px; border-radius:999px; background:#f1f5f9; color:#334155; font-weight:700; font-size:13px; margin:4px 6px 0 0;}
+  table{width:100%; border-collapse:separate; border-spacing:0 10px;}
+  th, td{padding:10px 8px; text-align:left;}
+  thead th{font-size:13px; color:#334155;}
+  tbody tr{background:#fff; border-radius:12px; box-shadow:0 6px 16px rgba(15,23,42,.06);}
+  tbody td:first-child{border-top-left-radius:12px; border-bottom-left-radius:12px;}
+  tbody td:last-child{border-top-right-radius:12px; border-bottom-right-radius:12px;}
+  .num{font-variant-numeric: tabular-nums;}
+  .cell-input{
+    width:100%; text-align:center; font-variant-numeric: tabular-nums;
+    padding:10px 12px; border:1px solid #e5e7eb; border-radius:10px; background:#fff; font-size:16px;
+  }
+  /* wider monetary fields for mobile */
+  .w-money{min-width:110px;}
+  .w-shares{min-width:68px; max-width:90px;}
+  .toolbar{display:flex; gap:10px; flex-wrap:wrap;}
+  details.asset{border:1px solid #e5e7eb; border-radius:16px; padding:10px; background:#fff;}
+  details.asset>summary{
+    list-style:none;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:10px 6px;
+    font-weight:800; font-size:18px;
+  }
+  details.asset[open]>summary{border-bottom:1px dashed #e5e7eb; margin-bottom:8px;}
+  summary::-webkit-details-marker{display:none;}
+  .right{display:flex; gap:8px; align-items:center;}
+  .muted{color:#64748b;}
+  .hidden{display:none !important;}
+  .section-title{font-weight:900; font-size:22px; margin:8px 0 12px;}
+  .note{font-size:13px; color:#475569;}
 </style>
 </head>
 <body>
 <header>Ladder App</header>
-<div class="wrap">
+<div class="container">
   <div class="card" id="formCard">
     <div class="row">
       <div class="col">
-        <label>Ticker / Name</label>
-        <input id="inpTicker" type="text" placeholder="e.g., RIOT" />
+        <label for="ticker">Ticker / Name</label>
+        <input id="ticker" type="text" placeholder="e.g., RIOT or MU">
       </div>
       <div class="col">
-        <label>Rungs</label>
-        <input id="inpRungs" type="number" min="1" max="4" step="1" value="3" />
+        <label for="rungs">Rungs</label>
+        <select id="rungs">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3" selected>3</option>
+          <option value="4">4</option>
+        </select>
       </div>
       <div class="col">
-        <label>Start Price</label>
-        <input id="inpStart" type="number" step="0.01" placeholder="current price" />
+        <label for="start">Start Price</label>
+        <input id="start" type="number" step="0.01" placeholder="current price">
       </div>
       <div class="col">
-        <label>Default Shares / row</label>
-        <input id="inpShares" type="number" step="1" value="1" />
-      </div>
-      <div class="col" style="flex:0 0 auto;align-self:flex-end">
-        <button class="btn" id="btnAdd">+ Add / Replace Asset</button>
+        <label for="shares">Default Shares / row</label>
+        <input id="shares" type="number" step="1" value="1">
       </div>
     </div>
-    <div class="chips">
-      <span class="chip">Presets (locked): Sell +2.5%, +4.5%, +7.0%, +10.0%</span>
-      <span class="chip">Buyback 1%, 2.5%, 3.5%, 5% (rungs 1–4)</span>
-      <span class="chip">20 cycles</span>
-      <span class="chip">Row 1 Buy = Start Price</span>
+    <div style="margin-top:12px" class="toolbar">
+      <button id="addBtn" class="btn">+ Add / Replace Asset</button>
+      <button id="saveBtn" class="btn ghost">Save Backup (JSON)</button>
+      <button id="loadBtn" class="btn ghost">Restore Backup (JSON)</button>
+      <input id="fileInput" class="hidden" type="file" accept="application/json">
+      <button id="csvBtn" class="btn ghost">Export CSV (Excel)</button>
+      <button id="clearBtn" class="btn danger">Clear All (this device)</button>
     </div>
-    <div class="toolbar">
-      <button class="btn ghost" id="btnSave">Save Backup (JSON)</button>
-      <button class="btn ghost" id="btnLoad">Restore Backup (JSON)</button>
-      <button class="btn ghost" id="btnCSV">Export CSV (Excel)</button>
-      <button class="btn danger" id="btnClear">Clear All (this device)</button>
+    <div style="margin-top:10px" class="note">
+      Baseline presets (locked): <span class="pill">Sell +2.5% / +4.5% / +7.0% / +10% (rungs 1–4)</span>
+      <span class="pill">Buyback 1% / 2.5% / 3.5% / 5%</span>
+      <span class="pill">20 cycles</span>
+      <div class="pill">Row 1 Buy = Start Price</div>
+      <div class="pill">nextBuy = prevSell × (1 − buyback%)</div>
+      <div class="pill">sell = buy × (1 + sell%)</div>
     </div>
   </div>
 
-  <div id="assets"></div>
+  <div id="assetsRoot"></div>
 </div>
 
 <script>
-  const S = {
-    SELL:[0.025,0.045,0.07,0.10],
-    BUYBACK:[0.01,0.025,0.035,0.05],
-    ROWS:20
-  };
-  const q = sel => document.querySelector(sel);
-  const assetsEl = q('#assets');
+const SELL_STEPS = [0.025, 0.045, 0.07, 0.10];
+const BUYBACK_STEPS = [0.01, 0.025, 0.035, 0.05];
+const CYCLES = 20;
 
-  function money(n){ return '$'+n.toFixed(2); }
-  function load(){ try{ return JSON.parse(localStorage.getItem('ladder_assets')||'[]'); }catch(e){return []} }
-  function save(list){ localStorage.setItem('ladder_assets', JSON.stringify(list)); }
+const els = {
+  ticker: document.getElementById('ticker'),
+  rungs:  document.getElementById('rungs'),
+  start:  document.getElementById('start'),
+  shares: document.getElementById('shares'),
+  addBtn: document.getElementById('addBtn'),
+  saveBtn: document.getElementById('saveBtn'),
+  loadBtn: document.getElementById('loadBtn'),
+  fileInput: document.getElementById('fileInput'),
+  csvBtn: document.getElementById('csvBtn'),
+  clearBtn: document.getElementById('clearBtn'),
+  root:   document.getElementById('assetsRoot')
+};
 
-  function calcPlanRows(startPrice, rungs, defShares){
-    const rows = [];
-    let prevSell = Number(startPrice);
-    for(let i=1;i<=S.ROWS;i++){
-      const rungIdx = Math.min(rungs-1, 3);
-      const buyback = S.BUYBACK[rungIdx];
-      const sellPct = S.SELL[rungIdx];
-      const buy = i===1 ? Number(startPrice) : prevSell * (1 - buyback);
-      const sell = buy * (1 + sellPct);
-      const profitShare = sell - buy;
-      rows.push({i,buy:round(buy), sell:round(sell), shares:defShares, total:round(profitShare*defShares), profitShare:round(profitShare)});
-      prevSell = sell;
-    }
-    return rows;
-  }
-  function round(n){ return Math.round(n*100)/100; }
+function loadState(){
+  try{
+    return JSON.parse(localStorage.getItem('ladder_assets_v2')||'[]');
+  }catch(e){ return []; }
+}
+function saveState(list){
+  localStorage.setItem('ladder_assets_v2', JSON.stringify(list));
+}
+let state = loadState();
 
-  function render(){
-    assetsEl.innerHTML='';
-    const list = load();
-    list.forEach(asset => assetsEl.appendChild(renderAsset(asset)));
-  }
+function fmt(n){ return Number(n).toFixed(2); }
 
-  function renderAsset(asset){
-    const box = document.createElement('div');
-    box.className = 'asset';
-    const header = document.createElement('header');
-    const controls = document.createElement('div');
-    controls.className='controls';
-    controls.innerHTML = \`
-      <div class="title">\${asset.ticker.toUpperCase()}</div>
-      <span class="chip">\${asset.rungs} rung(s)</span>
-      <span class="chip">start \${money(asset.start)}</span>
-      <span class="chip">Sell +\${(S.SELL[Math.min(asset.rungs-1,3)]*100).toFixed(1)}%</span>
-      <span class="chip">Buyback \${(S.BUYBACK[Math.min(asset.rungs-1,3)]*100).toFixed(1)}%</span>
-      <button class="btn ghost" data-act="toggle">Toggle</button>
-      <button class="btn danger" data-act="delete">Delete</button>
-    \`;
-    header.appendChild(controls);
-    box.appendChild(header);
-
-    const tblWrap = document.createElement('div');
-    tblWrap.className='table-wrap';
-    const table = document.createElement('table');
-    table.innerHTML = \`
-      <colgroup>
-        <col><col><col><col><col><col>
-      </colgroup>
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Planned Buy</th>
-          <th>Planned Sell</th>
-          <th>Profit/Share</th>
-          <th>Planned Shares</th>
-          <th>Planned Total</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    \`;
-    const tbody = table.querySelector('tbody');
-    asset.rows.forEach(r => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = \`
-        <td class="mono">\${r.i}</td>
-        <td><input type="number" step="0.01" value="\${r.buy.toFixed(2)}" data-k="buy"></td>
-        <td><input type="number" step="0.01" value="\${r.sell.toFixed(2)}" data-k="sell"></td>
-        <td class="right mono">\${money(r.profitShare)}</td>
-        <td><input type="number" step="1" value="\${r.shares}" data-k="shares"></td>
-        <td class="right mono">\${money(r.total)}</td>
-      \`;
-      tbody.appendChild(tr);
+function buildRows(start, rungIndex, defaultShares){
+  const sellPct = SELL_STEPS[rungIndex];
+  const buyback = BUYBACK_STEPS[rungIndex];
+  const rows = [];
+  let buy = Number(start);
+  for(let i=0;i<CYCLES;i++){
+    const sell = buy*(1+sellPct);
+    const profit = sell - buy;
+    rows.push({
+      buy: +fmt(buy),
+      sell: +fmt(sell),
+      profit: +fmt(profit),
+      shares: defaultShares
     });
-    tblWrap.appendChild(table);
-    box.appendChild(tblWrap);
-
-    // handlers
-    box.addEventListener('click', (e)=>{
-      const act = e.target.getAttribute('data-act');
-      if(act==='delete'){
-        const list = load().filter(a=>a.id!==asset.id);
-        save(list); render();
-      }
-      if(act==='toggle'){
-        tblWrap.style.display = (tblWrap.style.display==='none'?'':'none') === '' ? 'none' : '';
-      }
-    });
-    // inline edits
-    box.addEventListener('input', (e)=>{
-      const inp = e.target;
-      if(inp.tagName!=='INPUT') return;
-      const rowEl = inp.closest('tr'); if(!rowEl) return;
-      const idx = [...rowEl.parentNode.children].indexOf(rowEl);
-      const k = inp.dataset.k;
-      const list = load();
-      const a = list.find(a=>a.id===asset.id);
-      if(!a) return;
-      const row = a.rows[idx];
-      row[k] = Number(inp.value);
-      row.profitShare = round(row.sell - row.buy);
-      row.total = round(row.profitShare * row.shares);
-      // update display cells
-      rowEl.children[3].textContent = money(row.profitShare);
-      rowEl.children[5].textContent = money(row.total);
-      save(list);
-    });
-
-    return box;
+    // next cycle
+    buy = sell*(1 - buyback);
   }
+  return rows;
+}
 
-  function addOrReplace(){
-    const ticker = q('#inpTicker').value.trim() || 'ASSET';
-    const rungs = Math.min(4, Math.max(1, Number(q('#inpRungs').value) || 3));
-    const start = Number(q('#inpStart').value || 0);
-    const shares = Math.max(1, Number(q('#inpShares').value) || 1);
-    if(!start){ alert('Enter a start price.'); return; }
-    const rows = calcPlanRows(start, rungs, shares);
-    const list = load().filter(a=>a.ticker.toUpperCase() !== ticker.toUpperCase());
-    list.push({id:Date.now()+Math.random(), ticker, rungs, start, rows});
-    save(list); render();
-  }
+function upsertAsset(){
+  const name = (els.ticker.value||'').trim();
+  const rungs = parseInt(els.rungs.value,10);
+  const start = parseFloat(els.start.value);
+  const defShares = parseInt(els.shares.value,10)||1;
+  if(!name || isNaN(start)){ alert('Enter Ticker and Start Price'); return; }
 
-  // backup/restore/csv
-  q('#btnSave').onclick = () => {
-    const blob = new Blob([JSON.stringify(load(), null, 2)], {type:'application/json'});
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download='ladder_backup.json'; a.click();
+  // Create asset with N rungs
+  const asset = {
+    name,
+    start:+fmt(start),
+    rungs,
+    defShares,
+    // each rung has rows
+    ladders: Array.from({length:rungs}, (_,ri)=>buildRows(start, ri, defShares)),
+    collapsed:false
   };
-  q('#btnLoad').onclick = () => {
-    const inp = document.createElement('input'); inp.type='file'; inp.accept='.json,application/json';
-    inp.onchange = async () => {
-      const txt = await inp.files[0].text();
-      save(JSON.parse(txt)); render();
-    };
-    inp.click();
-  };
-  q('#btnCSV').onclick = () => {
-    const list = load();
-    let lines = ['Ticker,Rungs,Start,#,Planned Buy,Planned Sell,Profit/Share,Planned Shares,Planned Total'];
-    list.forEach(a=>{
-      a.rows.forEach(r=>{
-        lines.push([a.ticker,a.rungs,a.start,r.i,r.buy,r.sell,r.profitShare,r.shares,r.total].join(','));
-      });
-    });
-    const blob = new Blob([lines.join('\n')],{type:'text/csv'});
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download='ladder.csv'; a.click();
-  };
-  q('#btnClear').onclick = () => { if(confirm('Clear all saved ladders on this device?')){ save([]); render(); } };
 
-  q('#btnAdd').onclick = addOrReplace;
-
-  // seed demo if empty
-  if(load().length===0){
-    const demo = {ticker:'RIOT', rungs:3, start:11.48, rows: calcPlanRows(11.48,3,1), id:1};
-    save([demo]);
-  }
+  // replace if exists
+  const idx = state.findIndex(a=>a.name.toLowerCase()===name.toLowerCase());
+  if(idx>=0) state[idx]=asset; else state.push(asset);
+  saveState(state);
   render();
+  // scroll asset into view
+  const el = document.querySelector(`[data-asset="${name}"]`);
+  if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function render(){
+  els.root.innerHTML='';
+  if(state.length===0){
+    const empty=document.createElement('div');
+    empty.className='card'; empty.innerHTML='<div class="muted">No assets yet. Add one above.</div>';
+    els.root.appendChild(empty); return;
+  }
+  state.forEach(asset=>{
+    const wrapper=document.createElement('details');
+    wrapper.className='asset card';
+    wrapper.dataset.asset=asset.name;
+    if(!asset.collapsed) wrapper.setAttribute('open','');
+
+    const summary=document.createElement('summary');
+    summary.innerHTML=`<div><span class="section-title">${asset.name}</span>
+      <span class="pill">${asset.rungs} rung(s)</span>
+      <span class="pill">start $${fmt(asset.start)}</span></div>
+      <div class="right">
+        <button class="btn small ghost" data-action="toggle">Toggle</button>
+        <button class="btn small danger" data-action="delete">Delete</button>
+      </div>`;
+    wrapper.appendChild(summary);
+
+    // badges for rung-level percentages
+    const badges=document.createElement('div');
+    for(let r=0;r<asset.rungs;r++){
+      const pill=document.createElement('span');
+      pill.className='pill';
+      pill.textContent=`Rung ${r+1}: Sell ${Math.round(SELL_STEPS[r]*1000)/10}% • Buyback ${Math.round(BUYBACK_STEPS[r]*1000)/10}%`;
+      badges.appendChild(pill);
+    }
+    wrapper.appendChild(badges);
+
+    for(let r=0;r<asset.rungs;r++){
+      const table=document.createElement('table');
+      table.innerHTML=`
+        <thead>
+          <tr>
+            <th class="muted">#</th>
+            <th>Planned Buy</th>
+            <th>Planned Sell</th>
+            <th>Profit/Share</th>
+            <th>Planned Shares</th>
+            <th>Planned Total</th>
+          </tr>
+        </thead>
+        <tbody></tbody>`;
+      const tbody=table.querySelector('tbody');
+      asset.ladders[r].forEach((row,i)=>{
+        const tr=document.createElement('tr');
+        const total = row.profit * (row.shares||0) + 0;
+        tr.innerHTML = `
+          <td class="num">${i+1}</td>
+          <td><input class="cell-input w-money" type="number" step="0.01" value="${fmt(row.buy)}" data-role="buy"></td>
+          <td><input class="cell-input w-money" type="number" step="0.01" value="${fmt(row.sell)}" data-role="sell"></td>
+          <td class="num">$${fmt(row.profit)}</td>
+          <td><input class="cell-input w-shares" type="number" step="1" value="${row.shares}" data-role="shares"></td>
+          <td class="num" data-role="total">$${fmt(total)}</td>
+        `;
+        // listeners to keep profit/total aligned when user edits
+        tr.querySelectorAll('input').forEach(inp=>{
+          inp.addEventListener('input', (e)=>{
+            const role=e.target.dataset.role;
+            const value=parseFloat(e.target.value)||0;
+            if(role==='buy'){ row.buy=value; }
+            if(role==='sell'){ row.sell=value; }
+            if(role==='shares'){ row.shares=parseInt(value,10)||0; }
+            row.profit = +(row.sell - row.buy).toFixed(2);
+            tr.children[3].textContent = '$'+fmt(row.profit);
+            tr.querySelector('[data-role="total"]').textContent = '$'+fmt((row.shares||0)*row.profit);
+            saveState(state);
+          });
+        });
+        tbody.appendChild(tr);
+      });
+      const rungTitle=document.createElement('div');
+      rungTitle.className='section-title';
+      rungTitle.textContent=`Rung ${r+1}`;
+      wrapper.appendChild(rungTitle);
+      wrapper.appendChild(table);
+    }
+
+    // summary actions
+    summary.addEventListener('click',(ev)=>{
+      // stop default details toggle; we control with button
+      const isBtn = ev.target.closest('button');
+      if(!isBtn){ ev.preventDefault(); }
+    });
+    summary.querySelector('[data-action="toggle"]').addEventListener('click',(ev)=>{
+      ev.stopPropagation();
+      asset.collapsed = !wrapper.hasAttribute('open');
+      if(wrapper.hasAttribute('open')) wrapper.removeAttribute('open'); else wrapper.setAttribute('open','');
+      saveState(state);
+    });
+    summary.querySelector('[data-action="delete"]').addEventListener('click',(ev)=>{
+      ev.stopPropagation();
+      if(confirm('Delete this ladder?')){
+        state = state.filter(a=>a.name!==asset.name);
+        saveState(state); render();
+      }
+    });
+
+    els.root.appendChild(wrapper);
+  });
+}
+
+// CSV + backup helpers
+els.saveBtn.addEventListener('click', ()=>{
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='ladder_backup.json'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+});
+els.loadBtn.addEventListener('click', ()=> els.fileInput.click());
+els.fileInput.addEventListener('change', (e)=>{
+  const file = e.target.files[0]; if(!file) return;
+  const fr=new FileReader();
+  fr.onload=()=>{ try{ state=JSON.parse(fr.result||'[]'); saveState(state); render(); }catch(err){ alert('Invalid JSON'); } };
+  fr.readAsText(file);
+});
+els.csvBtn.addEventListener('click', ()=>{
+  const rows = [['Ticker','Rung','#','Planned Buy','Planned Sell','Profit/Share','Planned Shares','Planned Total']];
+  state.forEach(a=>a.ladders.forEach((ladder,ri)=>ladder.forEach((row,i)=>{
+    rows.push([a.name, ri+1, i+1, row.buy, row.sell, row.profit, row.shares, +(row.profit*(row.shares||0)).toFixed(2)]);
+  })));
+  const csv = rows.map(r=>r.join(',')).join('\n');
+  const blob = new Blob([csv],{type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='ladder_export.csv'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+});
+els.clearBtn.addEventListener('click', ()=>{
+  if(confirm('Clear all data on this device?')){
+    state=[]; saveState(state); render();
+  }
+});
+
+els.addBtn.addEventListener('click', upsertAsset);
+
+// initial render
+render();
 </script>
 </body>
 </html>
