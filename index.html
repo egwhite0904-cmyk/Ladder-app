@@ -4,39 +4,63 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Ladder App</title>
-  <link rel="icon" href="ladder.svg">
-  <link rel="stylesheet" href="styles.css?v=3">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header class="topbar">
-    <img src="ladder.svg" alt="" class="logo">
-    <h1>Ladder App</h1>
-    <span id="ready" class="pill">ready</span>
+    <div class="brand">
+      <img src="ladder.svg" alt="" class="logo">
+      <span>Ladder App</span>
+    </div>
+    <div id="status" class="status">ready</div>
   </header>
 
-  <main id="app" class="wrap">
-    <section class="panel">
-      <h2>Add / Replace Asset</h2>
-      <label>Ticker / Name <input id="ticker" placeholder="e.g., RIOT or MU"></label>
-      <label>Start Price <input id="startPrice" type="number" inputmode="decimal" placeholder="current price"></label>
-      <label>Default Shares / row <input id="defaultShares" type="number" step="1" value="1"></label>
-      <div class="hint">Presets: Sell +2.5%, +4.5%, +7% (first 2–4 based on rungs). Buyback 1%, 2.5%, 3.5%, 5% (rungs 1–4). 20 cycles.</div>
-      <div class="row">
-        <button id="addAsset">+ Add / Replace Asset</button>
-        <button id="saveBackup">Save Backup (JSON)</button>
-        <button id="restoreBackup">Restore Backup (JSON)</button>
-        <button id="exportCsv">Export CSV (Excel)</button>
+  <main class="container">
+    <section class="controls card">
+      <div class="grid2">
+        <div>
+          <label>Ticker / Name</label>
+          <input id="ticker" placeholder="RIOT or MU">
+        </div>
+        <div>
+          <label>Rungs</label>
+          <select id="rungs">
+            <option value="2">2 rungs</option>
+            <option value="3" selected>3 rungs</option>
+            <option value="4">4 rungs</option>
+          </select>
+        </div>
+        <div>
+          <label>Start Price</label>
+          <input id="startPrice" inputmode="decimal" placeholder="current price">
+        </div>
+        <div>
+          <label>Default Shares / row</label>
+          <input id="defaultShares" inputmode="numeric" value="1">
+        </div>
       </div>
-      <div class="row danger">
-        <button id="clearAll" class="danger">Clear All (this device)</button>
+
+      <div class="preset-note">
+        Baseline presets (locked): Sell +2.5%, +4.5%, +7.0% (+10% for rung 4). Buyback 1%, 2.5%, 3.5%, 5%. 20 cycles.
+        Row 1 Planned Buy equals Start Price. Each next row uses:
+        <code>nextBuy = prevSell × (1 − buyback%)</code> and
+        <code>sell = buy × (1 + sell%)</code>.
+      </div>
+
+      <div class="buttons">
+        <button id="addAsset" class="btn green">+ Add / Replace Asset</button>
+        <button id="saveBackup" class="btn">Save Backup (JSON)</button>
+        <button id="restoreBackup" class="btn">Restore Backup (JSON)</button>
+        <button id="exportCsv" class="btn">Export CSV (Excel)</button>
+        <button id="clearAll" class="btn danger">Clear All (this device)</button>
       </div>
     </section>
 
-    <div id="assets"></div>
+    <section id="assets"></section>
   </main>
 
-  <footer class="foot">v2-baseline • <span id="jsStatus">JS not loaded</span></footer>
+  <footer class="foot">egwhite0904-cmyk.github.io • <span id="footStatus">JS loaded</span></footer>
 
-  <script src="app.js?v=3"></script>
+  <script src="app.js"></script>
 </body>
 </html>
