@@ -1,201 +1,227 @@
-(function(){
-  const LS_KEY = 'ladder_app_v2_data';
-  const assetsEl = document.getElementById('assets');
-  const addBtn = document.getElementById('addAsset');
-  const saveBtn = document.getElementById('saveJson');
-  const restoreBtn = document.getElementById('restoreJson');
-  const exportBtn = document.getElementById('exportCsv');
-  const clearBtn = document.getElementById('clearAll');
 
-  const $ = sel => document.querySelector(sel);
+(() => {
+  const $ = (sel, root=document) => root.querySelector(sel);
+  const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+  const LS_KEY = 'ladderApp.v2';
 
-  function load(){
-    try{
-      const raw = localStorage.getItem(LS_KEY);
-      return raw ? JSON.parse(raw) : { assets: [] };
-    }catch(e){ return { assets: [] }; }
-  }
-  function save(state){ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+  const state = load() || { assets: [] };
 
-  function presetsByRungs(rungs){
-    // fixed presets per rung index
-    const sell =   [0.025, 0.045, 0.070, 0.10];
-    const buyback=[0.010, 0.025, 0.035, 0.05];
-    return {sell: sell.slice(0, rungs), buyback: buyback.slice(0, rungs)};
-  }
+  const startPercents = {
+    sell:[0.025,0.045,0.07,0.10],
+    buyback:[0.01,0.025,0.035,0.05]
+  };
 
-  function buildRows(start, rungs, defaultShares){
-    const rowsPerRung = 20;
-    const {sell, buyback} = presetsByRungs(rungs);
-    const all = [];
-    for(let rung=0;rung<rungs;rung++){
-      const sPct = sell[rung], bPct = buyback[rung];
-      let buy = start; // row1 buy equals start
-      for(let i=1;i<=rowsPerRung;i++){
-        const sellPrice = +(buy * (1 + sPct)).toFixed(2);
-        all.push({
-          rung: rung+1, row: i,
-          buy: +buy.toFixed(2),
-          sell: sellPrice,
-          shares: defaultShares,
-          profit: +(sellPrice - buy).toFixed(2), // per share
-          plannedTotal: +((sellPrice - buy) * defaultShares).toFixed(2),
-          buyDate: '', sellDate: ''
-        });
-        // next row buy uses previous row sell discounted by buyback%
-        const nextBuy = sellPrice * (1 - bPct);
-        buy = nextBuy;
-      }
-    }
-    return all;
-  }
+  // UI references
+  const addBtn = $('#addAsset');
+  const addPanel = $('#addPanel');
+  const confirmAdd = $('#confirmAdd');
+  const assetsHost = $('#assets');
+  const status = $('#status');
 
-  function addOrReplaceAsset(state, ticker, rungs, startPrice, defaultShares){
-    // replace if ticker exists
-    const idx = state.assets.findIndex(a => a.ticker.toLowerCase() === ticker.toLowerCase());
-    const rows = buildRows(startPrice, rungs, defaultShares);
-    const cardState = {collapsed:false};
-    const asset = {ticker, rungs, startPrice, defaultShares, rows, ui:cardState};
-    if(idx >= 0) state.assets[idx] = asset; else state.assets.unshift(asset);
-    save(state);
-    render(state);
-  }
-
-  function fmtMoney(v){
-    if (v === '' || v === null || v === undefined) return '';
-    const n = Number(v);
-    if (isNaN(n)) return '';
-    return '$' + n.toFixed(2);
-  }
-
-  function cellNum(val, onChange, small=false){
-    const td = document.createElement('td'); td.className='cell' + (small?' small':'');
-    const inp = document.createElement('input'); inp.type='number'; inp.step='0.01'; inp.value = val;
-    inp.addEventListener('change', e => onChange(Number(inp.value)));
-    td.appendChild(inp); return td;
-  }
-  function cellText(val, onChange){
-    const td = document.createElement('td'); td.className='cell';
-    const inp = document.createElement('input'); inp.type='text'; inp.value = val || '';
-    inp.addEventListener('change', e => onChange(inp.value));
-    td.appendChild(inp); return td;
-  }
-  function tdText(text, cls=''){ const td=document.createElement('td'); if(cls) td.className=cls; td.textContent=text; return td; }
-
-  function render(state){
-    assetsEl.innerHTML = '';
-    if(!state.assets.length){
-      const empty = document.createElement('p');
-      empty.textContent = 'No assets yet. Add one above.';
-      assetsEl.appendChild(empty);
-      return;
-    }
-    state.assets.forEach((asset, aidx) => {
-      const card = document.createElement('div'); card.className='card';
-      const head = document.createElement('div'); head.className='cardHead';
-      const left = document.createElement('div');
-      left.innerHTML = `
-        <span class="badge">${asset.ticker}</span>
-        <span class="badge">${asset.rungs} rung(s)</span>
-        <span class="badge">start ${fmtMoney(asset.startPrice)}</span>
-        <span class="badge">Sell +${(presetsByRungs(asset.rungs).sell[0]*100).toFixed(1)}% …</span>
-        <span class="badge">Buyback ${(presetsByRungs(asset.rungs).buyback[0]*100).toFixed(1)}% …</span>
-      `;
-      const spacer = document.createElement('div'); spacer.className='spacer';
-      const btns = document.createElement('div'); btns.className='cardBtns';
-      const toggle = document.createElement('button'); toggle.textContent = 'Toggle';
-      const del = document.createElement('button'); del.textContent = 'Delete'; del.className='danger';
-      btns.append(toggle, del);
-      head.append(left, spacer, btns);
-
-      const body = document.createElement('div'); body.className='cardBody' + (asset.ui?.collapsed?' collapsed':'');
-
-      // table
-      const tbl = document.createElement('table'); tbl.className='table';
-      const thead = document.createElement('thead'); const thr = document.createElement('tr');
-      ['#','Planned Buy','Planned Sell','Profit/Share','Planned Shares','Planned Total','Buy Date','Sell Date']
-        .forEach(h => { const th=document.createElement('th'); th.textContent=h; thr.appendChild(th); });
-      thead.appendChild(thr); tbl.appendChild(thead);
-      const tbody = document.createElement('tbody');
-
-      asset.rows.forEach((r, ridx) => {
-        const tr = document.createElement('tr');
-        tr.appendChild( tdText(String(r.row),'right') );
-        tr.appendChild( cellNum(r.buy, v => { r.buy = v; r.profit=+(r.sell - r.buy).toFixed(2); r.plannedTotal=+((r.sell-r.buy)*r.shares).toFixed(2); save(state); render(state);} ) );
-        tr.appendChild( cellNum(r.sell, v => { r.sell = v; r.profit=+(r.sell - r.buy).toFixed(2); r.plannedTotal=+((r.sell-r.buy)*r.shares).toFixed(2); save(state); render(state);} ) );
-        tr.appendChild( tdText(fmtMoney(r.profit),'right') );
-        tr.appendChild( cellNum(r.shares, v => { r.shares=v; r.plannedTotal=+((r.sell-r.buy)*r.shares).toFixed(2); save(state); render(state); }, true) );
-        tr.appendChild( tdText(fmtMoney(r.plannedTotal),'right') );
-        tr.appendChild( cellText(r.buyDate || '', v => { r.buyDate=v; save(state);} ) );
-        tr.appendChild( cellText(r.sellDate || '', v => { r.sellDate=v; save(state);} ) );
-        tbody.appendChild(tr);
-      });
-      tbl.appendChild(tbody);
-      body.appendChild(tbl);
-
-      // wire buttons
-      toggle.addEventListener('click', () => {
-        asset.ui = asset.ui || {}; asset.ui.collapsed = !asset.ui.collapsed; save(state); render(state);
-      });
-      del.addEventListener('click', () => {
-        if(confirm(`Delete ${asset.ticker}?`)){ state.assets.splice(aidx,1); save(state); render(state); }
-      });
-
-      card.append(head, body);
-      assetsEl.appendChild(card);
-    });
-  }
-
-  // Controls
-  addBtn.addEventListener('click', () => {
-    const t = $('#ticker').value.trim();
-    const r = Number($('#rungs').value);
-    const sp = Number($('#startPrice').value);
-    const ds = Number($('#defaultShares').value || 1);
-    if(!t || !sp) { alert('Enter ticker and start price'); return; }
-    const state = load();
-    addOrReplaceAsset(state, t, r, sp, ds);
-    // clear ticker/start fields for quick next add
-    $('#ticker').value=''; $('#startPrice').value='';
-  });
-
-  saveBtn.addEventListener('click', () => {
-    const state = load();
+  $('#saveBackup').onclick = () => {
     const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
     a.download = 'ladder_backup.json';
+    a.href = URL.createObjectURL(blob);
     a.click();
-    URL.revokeObjectURL(a.href);
-  });
+  };
 
-  restoreBtn.addEventListener('click', async () => {
-    const inp = document.createElement('input'); inp.type='file'; inp.accept='.json,application/json';
-    inp.onchange = async () => {
-      const file = inp.files[0]; if(!file) return;
-      const txt = await file.text();
-      try{ const data = JSON.parse(txt); save(data); render(data);}catch(e){ alert('Bad JSON'); }
+  $('#restoreBackup').onclick = async () => {
+    const input = document.createElement('input');
+    input.type='file';
+    input.accept='application/json';
+    input.onchange = async () => {
+      const file = input.files[0];
+      if(!file) return;
+      const text = await file.text();
+      try{
+        const obj = JSON.parse(text);
+        state.assets = obj.assets || [];
+        save();
+        render();
+      }catch(e){ alert('Invalid JSON'); }
     };
-    inp.click();
-  });
+    input.click();
+  };
 
-  exportBtn.addEventListener('click', () => {
-    const {assets} = load();
-    let lines = ['Ticker,Rung,Row,Planned Buy,Planned Sell,Profit/Share,Planned Shares,Planned Total,Buy Date,Sell Date'];
-    assets.forEach(a => {
-      a.rows.forEach(r => {
-        lines.push([a.ticker, r.rung, r.row, r.buy, r.sell, r.profit, r.shares, r.plannedTotal, `"${r.buyDate||''}"`, `"${r.sellDate||''}"`].join(','));
+  $('#exportCSV').onclick = () => {
+    const rows = [["Asset","Rung","Row","# Buy","# Sell","Profit/Share","Planned Shares","Planned Total","Buy Date","Sell Date"]];
+    state.assets.forEach(a => {
+      a.rows.forEach((r,i) => {
+        rows.push([a.name, a.rungs, i+1, r.buy, r.sell, profitPerShare(r).toFixed(2), r.shares, (r.shares*profitPerShare(r)).toFixed(2), r.buyDate||"", r.sellDate||""]);
       });
     });
-    const blob=new Blob([lines.join('\n')],{type:'text/csv'});
-    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='ladder_export.csv'; a.click();
-    URL.revokeObjectURL(a.href);
-  });
+    const csv = rows.map(r => r.map(x => `"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv'});
+    const a = document.createElement('a');
+    a.download = 'ladder_export.csv';
+    a.href = URL.createObjectURL(blob);
+    a.click();
+  };
 
-  clearBtn.addEventListener('click', () => {
-    if(confirm('Clear all data on this device?')){ localStorage.removeItem(LS_KEY); render(load()); }
-  });
+  $('#clearAll').onclick = () => {
+    if(confirm('Clear all ladders on this device?')){
+      state.assets = [];
+      save();
+      render();
+    }
+  };
 
-  // first render
-  render(load());
+  addBtn.onclick = () => addPanel.classList.toggle('hidden');
+
+  confirmAdd.onclick = () => {
+    const name = $('#tickerInput').value.trim() || 'ASSET';
+    const rungs = parseInt($('#rungsInput').value,10);
+    const start = toNum($('#startInput').value);
+    const shares = parseInt($('#sharesInput').value || '1', 10);
+    if(!start){ alert('Enter a valid Start Price'); return; }
+    const rows = buildRows(rungs, start, shares);
+    // replace if exists
+    const idx = state.assets.findIndex(a => a.name.toLowerCase() === name.toLowerCase());
+    const asset = {
+      name, rungs, start, sharesDefault: shares,
+      sellPct: startPercents.sell[rungs-1],
+      buybackPct: startPercents.buyback[rungs-1],
+      rows
+    };
+    if(idx >= 0) state.assets[idx] = asset; else state.assets.unshift(asset);
+    save();
+    addPanel.classList.add('hidden');
+    render();
+  };
+
+  function buildRows(rungs, start, shares){
+    const sellPct = startPercents.sell[rungs-1];
+    const buybackPct = startPercents.buyback[rungs-1];
+    const out = [];
+    let buy = start;
+    for(let i=0;i<20;i++){
+      const sell = round2(buy * (1 + sellPct));
+      out.push({ buy: round2(buy), sell, shares, buyDate:"", sellDate:"" });
+      buy = round2(sell * (1 - buybackPct));
+    }
+    return out;
+  }
+
+  function profitPerShare(r){ return round2(r.sell - r.buy); }
+
+  function render(){
+    assetsHost.innerHTML = '';
+    state.assets.forEach(a => {
+      const tpl = $('#assetTemplate').content.cloneNode(true);
+      const card = tpl.querySelector('.asset');
+      card.dataset.name = a.name;
+
+      card.querySelector('.chip.name').textContent = a.name;
+      card.querySelector('.chip.rungs').textContent = `${a.rungs} rung(s)`;
+      card.querySelector('.chip.start').textContent = `start ${fmt(a.start)}`;
+      card.querySelector('.chip.sell').textContent = `Sell +${(a.sellPct*100).toFixed(1)}%`;
+      card.querySelector('.chip.buyback').textContent = `Buyback ${(a.buybackPct*100).toFixed(1)}%`;
+
+      card.querySelector('[data-action="toggle"]').onclick = () => {
+        card.querySelector('.asset-body').classList.toggle('hidden');
+      };
+      card.querySelector('[data-action="delete"]').onclick = () => {
+        if(confirm(`Delete ${a.name}?`)){
+          state.assets = state.assets.filter(x => x !== a);
+          save(); render();
+        }
+      };
+
+      const tbody = card.querySelector('tbody');
+      a.rows.forEach((r, i) => {
+        const tr = document.createElement('tr');
+
+        const tdIdx = document.createElement('td');
+        tdIdx.textContent = (i+1);
+        tr.appendChild(tdIdx);
+
+        const tdBuy = document.createElement('td');
+        tdBuy.className = 'cell';
+        const inBuy = inputAmount(r.buy);
+        inBuy.onchange = () => { r.buy = toNum(inBuy.value); save(); updateRow(tr, r, a); };
+        tdBuy.appendChild(inBuy);
+        tr.appendChild(tdBuy);
+
+        const tdSell = document.createElement('td');
+        tdSell.className = 'cell';
+        const inSell = inputAmount(r.sell);
+        inSell.onchange = () => { r.sell = toNum(inSell.value); save(); updateRow(tr, r, a); };
+        tdSell.appendChild(inSell);
+        tr.appendChild(tdSell);
+
+        const tdProfit = document.createElement('td');
+        tdProfit.className = 'cell';
+        const roProfit = ro(fmt(profitPerShare(r)));
+        tdProfit.appendChild(roProfit);
+        tr.appendChild(tdProfit);
+
+        const tdShares = document.createElement('td');
+        tdShares.className = 'cell';
+        const inShares = document.createElement('input');
+        inShares.type='number'; inShares.step='1'; inShares.value = r.shares;
+        inShares.onchange = () => { r.shares = parseInt(inShares.value||'1',10); save(); updateRow(tr, r, a); };
+        tdShares.appendChild(inShares);
+        tr.appendChild(tdShares);
+
+        const tdTotal = document.createElement('td');
+        tdTotal.className = 'cell';
+        const roTotal = ro(fmt(r.shares * profitPerShare(r)));
+        tdTotal.appendChild(roTotal);
+        tr.appendChild(tdTotal);
+
+        const tdBuyDate = document.createElement('td');
+        tdBuyDate.className = 'cell';
+        const inBuyDate = document.createElement('input');
+        inBuyDate.type='date'; inBuyDate.className='date';
+        if(r.buyDate) inBuyDate.value = r.buyDate;
+        inBuyDate.onchange = () => { r.buyDate = inBuyDate.value; save(); };
+        tdBuyDate.appendChild(inBuyDate);
+        tr.appendChild(tdBuyDate);
+
+        const tdSellDate = document.createElement('td');
+        tdSellDate.className = 'cell';
+        const inSellDate = document.createElement('input');
+        inSellDate.type='date'; inSellDate.className='date';
+        if(r.sellDate) inSellDate.value = r.sellDate;
+        inSellDate.onchange = () => { r.sellDate = inSellDate.value; save(); };
+        tdSellDate.appendChild(inSellDate);
+        tr.appendChild(tdSellDate);
+
+        tbody.appendChild(tr);
+      });
+
+      assetsHost.appendChild(card);
+    });
+  }
+
+  function updateRow(tr, r, a){
+    // profit cell (3rd) and total (6th)
+    tr.children[3].querySelector('.ro').textContent = fmt(profitPerShare(r));
+    tr.children[5].querySelector('.ro').textContent = fmt(r.shares * profitPerShare(r));
+  }
+
+  function inputAmount(v){
+    const inp = document.createElement('input');
+    inp.type='number'; inp.step='0.01'; inp.inputMode='decimal';
+    inp.value = Number(v).toFixed(2);
+    inp.className='amount';
+    return inp;
+  }
+  function ro(text){
+    const span = document.createElement('span');
+    span.className='ro';
+    span.textContent = text;
+    return span;
+  }
+
+  function toNum(v){ return Math.round(parseFloat(v||'0')*100)/100 }
+  function round2(v){ return Math.round(v*100)/100 }
+  function fmt(v){ return '$' + Number(v).toFixed(2) }
+
+  function save(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); status.textContent='saved'; setTimeout(()=>status.textContent='ready',500) }
+  function load(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)||''); }catch(e){ return null; } }
+
+  // Initial render
+  render();
 })();

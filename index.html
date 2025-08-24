@@ -1,58 +1,98 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Ladder App</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="ladder.svg" />
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="appbar">
     <div class="brand">
-      <img src="ladder.svg" class="logo" alt="" />
+      <img src="ladder.svg" alt="" class="logo"/>
       <span>Ladder App</span>
     </div>
-    <div id="ready" class="ready">ready</div>
+    <div id="status" class="status">ready</div>
   </header>
 
-  <main class="container">
-    <section class="controls">
-      <div class="grid">
+  <main class="content">
+    <section class="actions">
+      <button id="addAsset" class="btn primary">+ Add / Replace Asset</button>
+      <button id="saveBackup" class="btn">Save Backup (JSON)</button>
+      <button id="restoreBackup" class="btn">Restore Backup (JSON)</button>
+      <button id="exportCSV" class="btn">Export CSV (Excel)</button>
+      <button id="clearAll" class="btn danger">Clear All (this device)</button>
+    </section>
+
+    <section id="addPanel" class="panel hidden">
+      <div class="grid2">
         <label>Ticker / Name
-          <input id="ticker" placeholder="e.g., RIOT or MU" />
+          <input id="tickerInput" placeholder="e.g., RIOT or COIN">
         </label>
         <label>Rungs
-          <select id="rungs">
+          <select id="rungsInput">
             <option value="2">2 rungs</option>
             <option value="3" selected>3 rungs</option>
             <option value="4">4 rungs</option>
           </select>
         </label>
         <label>Start Price
-          <input id="startPrice" type="number" inputmode="decimal" step="0.01" placeholder="current price" />
+          <input id="startInput" type="number" step="0.01" inputmode="decimal" placeholder="current price">
         </label>
         <label>Default Shares / row
-          <input id="defaultShares" type="number" step="1" value="1" />
+          <input id="sharesInput" type="number" step="1" value="1">
         </label>
       </div>
-
-      <p class="preset-note">
-        Presets (locked): Sell +2.5%, +4.5%, +7.0%, +10% (rungs 1–4). Buyback 1%, 2.5%, 3.5%, 5% (rungs 1–4).
-        20 cycles. Row 1 <b>Planned Buy</b> equals Start Price; each next row uses:
+      <div class="note">
+        Presets (locked): Sell +2.5%, +4.5%, +7.0%, +10% (rungs 1–4). Buyback 1%, 2.5%, 3.5%, 5% (rungs 1–4). 20 cycles.
+        Row 1 Planned Buy equals Start Price; each next row uses:
         <code>nextBuy = prevSell × (1 − buyback%)</code> and <code>sell = buy × (1 + sell%)</code>.
-      </p>
-
-      <div class="buttons">
-        <button id="addAsset" class="primary">+ Add / Replace Asset</button>
-        <button id="saveJson">Save Backup (JSON)</button>
-        <button id="restoreJson">Restore Backup (JSON)</button>
-        <button id="exportCsv">Export CSV (Excel)</button>
-        <button id="clearAll" class="danger">Clear All (this device)</button>
       </div>
+      <button id="confirmAdd" class="btn primary">Add / Replace Asset</button>
     </section>
 
-    <section id="assets"></section>
+    <div id="assets"></div>
   </main>
+
+  <template id="assetTemplate">
+    <section class="asset card">
+      <div class="asset-head">
+        <div class="chips">
+          <span class="chip name"></span>
+          <span class="chip rungs"></span>
+          <span class="chip start"></span>
+          <span class="chip sell"></span>
+          <span class="chip buyback"></span>
+        </div>
+        <div class="head-actions">
+          <button class="btn small" data-action="toggle">Toggle</button>
+          <button class="btn small danger" data-action="delete">Delete</button>
+        </div>
+      </div>
+
+      <div class="asset-body">
+        <div class="table-wrap">
+          <table class="ladder">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Planned Buy</th>
+                <th>Planned Sell</th>
+                <th>Profit/Share</th>
+                <th>Planned Shares</th>
+                <th>Planned Total</th>
+                <th>Buy Date</th>
+                <th>Sell Date</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </template>
 
   <script src="app.js"></script>
 </body>
