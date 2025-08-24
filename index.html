@@ -10,82 +10,80 @@
     --brand:#047857;--danger:#dc2626;--pill:#e2e8f0;
   }
   html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif}
-  .nav{position:sticky;top:0;z-index:5;background:linear-gradient(90deg,#11998e,#38ef7d);color:#fff;padding:14px 16px;display:flex;align-items:center;gap:12px}
-  .brand{font-weight:700;font-size:20px}
+  .nav{position:sticky;top:0;z-index:5;background:linear-gradient(90deg,#16a085,#2ecc71);color:#fff;padding:14px 16px;display:flex;align-items:center;gap:12px}
+  .brand{font-weight:800;font-size:22px;letter-spacing:.3px}
   .status-pill{margin-left:auto;background:#16a34a;border-radius:999px;padding:4px 10px;font-size:12px}
   .container{max-width:980px;margin:14px auto;padding:0 12px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 14px 10px 14px;margin-bottom:14px;box-shadow:0 1px 10px rgba(2,6,23,.05)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 14px 12px 14px;margin-bottom:14px;box-shadow:0 1px 10px rgba(2,6,23,.05)}
   h2{margin:0 0 10px 0;font-size:18px}
-  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .form-grid{display:grid;grid-template-columns:1fr 140px 1fr 140px;gap:12px}
   .form-grid label{display:flex;flex-direction:column;gap:6px}
   .form-grid span{font-size:12px;color:var(--muted)}
-  .form-grid input,.form-grid select{
+  .input, select{
     width:100%;height:44px;font-size:16px;padding:8px 10px;border:1px solid var(--line);
     border-radius:10px;background:#fff;box-sizing:border-box;
   }
-  @media (max-width:480px){.form-grid{grid-template-columns:1fr}}
+  @media (max-width:640px){.form-grid{grid-template-columns:1fr 1fr}}
   .btn{height:46px;border:none;border-radius:12px;padding:0 14px;font-size:16px;cursor:pointer}
   .btn-primary{background:var(--brand);color:#fff;width:100%;margin-top:10px}
   .btn-ghost{background:#e2e8f0;color:#0f172a}
-  .flex{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .pill{background:var(--pill);border-radius:999px;padding:6px 10px;font-size:12px;color:#0f172a}
   .danger{background:var(--danger);color:#fff}
-  .row{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px}
-  .row-grid{
-    display:grid;
-    grid-template-columns: 40px 1.2fr 1.2fr 0.9fr 0.9fr 1.0fr 1.1fr 1.1fr 1.1fr;
-    gap:10px;align-items:center
-  }
-  .row-grid input{
-    width:100%;height:42px;font-size:16px;border:1px solid var(--line);
-    border-radius:8px;padding:6px 8px;box-sizing:border-box
-  }
-  .row-head{background:#fafafa}
   .toolbar{display:flex;gap:10px;flex-wrap:wrap}
   .asset-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
   .right{margin-left:auto}
-  .small{font-size:12px;color:var(--muted)}
-  .footer{padding:20px 0 40px 0;text-align:center;color:var(--muted);font-size:12px}
+  .footer{padding:18px 0 40px 0;text-align:center;color:var(--muted);font-size:12px}
   .hide{display:none}
+
+  /* Row grid with fixed column widths so dollars & dates are visible on iPhone */
+  .row{background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px}
+  .row-grid{
+    display:grid;
+    grid-template-columns: 36px 120px 120px 92px 92px 108px 132px 132px 110px;
+    gap:10px; align-items:center;
+  }
+  .row-grid .num{font-variant-numeric:tabular-nums}
+  .row-grid input[type="text"],
+  .row-grid input[type="number"],
+  .row-grid input[type="date"]{
+    width:100%;height:40px;font-size:16px;border:1px solid var(--line);border-radius:8px;padding:6px 8px;box-sizing:border-box;
+  }
+  .row-head{font-weight:600;background:#f8fafc}
 </style>
 </head>
 <body>
   <div class="nav">
     <div class="brand">Ladder App</div>
-    <div class="status-pill" id="statusPill">ready</div>
+    <div class="status-pill">ready</div>
   </div>
 
   <div class="container">
     <!-- New / Replace -->
     <section class="card">
       <h2>New / Replace Asset</h2>
-      <form id="assetForm" onsubmit="return false;">
-        <div class="form-grid">
-          <label><span>Ticker / Name</span><input id="ticker" placeholder="e.g., RIOT"></label>
-          <label><span>Rungs</span>
-            <select id="rungs">
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3" selected>3</option>
-              <option value="4">4</option>
-            </select>
-          </label>
-          <label><span>Start Price</span><input id="startPrice" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" placeholder="current price"></label>
-          <label><span>Default Shares / row</span><input id="defaultShares" inputmode="numeric" value="1"></label>
-        </div>
-        <button id="addBtn" class="btn btn-primary" type="button" onclick="addOrReplaceAsset()">+ Add / Replace Asset</button>
-      </form>
-      <div class="small" style="margin-top:8px">
+      <!-- NOTE: not a form; Safari won't block clicks -->
+      <div class="form-grid">
+        <label><span>Ticker / Name</span><input id="ticker" class="input" placeholder="e.g., RIOT"></label>
+        <label><span>Rungs</span>
+          <select id="rungs" class="input">
+            <option>1</option><option>2</option><option selected>3</option><option>4</option>
+          </select>
+        </label>
+        <label><span>Start Price</span><input id="startPrice" class="input" type="number" step="0.01" placeholder="current price"></label>
+        <label><span>Default Shares / row</span><input id="defaultShares" class="input" type="number" step="1" min="1" value="1"></label>
+      </div>
+      <button id="addBtn" class="btn btn-primary" type="button">+ Add / Replace Asset</button>
+      <div style="font-size:12px;color:#475569;margin-top:10px">
         Presets (locked): Sell +2.5%, +4.5%, +7.0%, +10% (rungs 1–4). Buyback 1%, 2.5%, 3.5%, 5% (rungs 1–4). 20 cycles.
-        Row 1 Planned Buy equals <b>Start Price</b>. Each next row:
-        <code>nextBuy = prevSell × (1 − buyback%)</code> and
-        <code>sell = buy × (1 + sell%)</code>. Edit any cell inline.
+        Row 1 Planned Buy equals <b>Start Price</b>. Each next row uses:
+        <code>nextBuy = prevSell × (1 − buyback%)</code> and <code>sell = buy × (1 + sell%)</code>.
+        Edit any cell inline.
       </div>
       <div class="toolbar" style="margin-top:10px">
-        <button id="saveBtn" class="btn btn-ghost" type="button">Save Backup (JSON)</button>
-        <button id="restoreBtn" class="btn btn-ghost" type="button">Restore Backup (JSON)</button>
-        <button id="csvBtn" class="btn btn-ghost" type="button">Export CSV (Excel)</button>
-        <button id="clearBtn" class="btn danger" type="button">Clear All (this device)</button>
+        <button id="saveBtn" class="btn btn-ghost">Save Backup (JSON)</button>
+        <button id="restoreBtn" class="btn btn-ghost">Restore Backup (JSON)</button>
+        <button id="csvBtn" class="btn btn-ghost">Export CSV (Excel)</button>
+        <button id="clearBtn" class="btn danger">Clear All (this device)</button>
       </div>
     </section>
 
@@ -96,184 +94,143 @@
 
 <script>
 // ---------- Helpers ----------
-const $ = sel => document.querySelector(sel);
-const pad = n => String(n).padStart(2,'0');
-function fmtMoney(n){ return isFinite(n) ? '$' + Number(n).toFixed(2) : '$0.00'; }
-function today(){ const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
-function setStatus(txt){ const p=$('#statusPill'); p.textContent=txt; setTimeout(()=>p.textContent='ready',900); }
+const $ = (s)=>document.querySelector(s);
+const pad = (n)=>String(n).padStart(2,'0');
+const money = (n)=> isFinite(n) ? '$' + Number(n).toFixed(2) : '$0.00';
+const SELL_STEPS=[0.025,0.045,0.07,0.10];
+const BUYBACK_STEPS=[0.01,0.025,0.035,0.05];
+const ROWS=20;
+let db = load() || {assets:[]};
 
-// ---------- Data ----------
-let db = load() || { assets: [] };
+function cueSaved(txt='saved'){
+  const pill=$('.status-pill'); const old=pill.textContent;
+  pill.textContent=txt; setTimeout(()=>pill.textContent='ready',900);
+}
 
-const SELL_STEPS = [0.025,0.045,0.07,0.10];
-const BUYBACK_STEPS = [0.01,0.025,0.035,0.05];
-const ROWS = 20;
+// ---------- Persistence ----------
+function save(){ localStorage.setItem('ladder_app_singlefile_v4', JSON.stringify(db)); }
+function load(){ try{ return JSON.parse(localStorage.getItem('ladder_app_singlefile_v4')||''); }catch(e){ return null; } }
 
-// ---------- Build ladder rows ----------
-function buildRows(startPrice, rungIndex, defaultShares){
-  const sellPct = SELL_STEPS[Math.min(rungIndex, SELL_STEPS.length-1)];
-  const buyback = BUYBACK_STEPS[Math.min(rungIndex, BUYBACK_STEPS.length-1)];
-  const rows = [];
-  let buy = startPrice;
-  for (let i=1;i<=ROWS;i++){
-    const sell = buy * (1 + sellPct);
-    const profitPer = sell - buy;
+// ---------- Build Rows ----------
+function buildRows(start, rungIdx, shares){
+  const sellPct = SELL_STEPS[Math.min(rungIdx, SELL_STEPS.length-1)];
+  const buyback = BUYBACK_STEPS[Math.min(rungIdx, BUYBACK_STEPS.length-1)];
+  const rows=[]; let buy=start;
+  for(let i=1;i<=ROWS;i++){
+    const sell = buy*(1+sellPct);
+    const profit = sell-buy;
     rows.push({
-      n:i,
-      plannedBuy:+buy.toFixed(2),
-      plannedSell:+sell.toFixed(2),
-      profitPer:+profitPer.toFixed(2),
-      plannedShares: defaultShares,
-      plannedTotal:+(profitPer*defaultShares).toFixed(2),
-      buyDate:"",
-      sellDate:"",
-      cumRealized:0
+      n:i, buy:buy.toFixed(2), sell:sell.toFixed(2),
+      profit:profit.toFixed(2), shares:shares,
+      total:(profit*shares).toFixed(2),
+      bdate:'', sdate:'', cum:'0.00'
     });
-    buy = sell * (1 - buyback);
+    buy = sell*(1-buyback);
   }
   return rows;
 }
 
-// ---------- Render ----------
+// ---------- Renders ----------
+function rowHTML(r){
+  return `<div class="row">
+    <div class="row-grid">
+      <div class="num">${r.n}</div>
+      <input type="text" value="${r.buy}">
+      <input type="text" value="${r.sell}">
+      <div class="num">${money(+r.profit)}</div>
+      <input type="number" min="0" step="1" value="${r.shares}">
+      <div class="num">${money(+r.total)}</div>
+      <input type="date" value="${r.bdate}">
+      <input type="date" value="${r.sdate}">
+      <div class="num">${money(+r.cum)}</div>
+    </div>
+  </div>`;
+}
+
+function rungTable(rows, i){
+  const head=`<div class="row row-head"><div class="row-grid">
+      <div>#</div><div>Planned Buy</div><div>Planned Sell</div><div>Profit/Share</div>
+      <div>Planned Shares</div><div>Planned Total</div><div>Buy Date</div>
+      <div>Sell Date</div><div>Cum Realized</div></div></div>`;
+  return `<h3 style="margin:6px 2px 8px 2px">Rung ${i}</h3>${head}${rows.map(rowHTML).join('')}`;
+}
+
 function render(){
-  const el = $('#assets');
-  el.innerHTML = '';
+  const wrap=$('#assets'); wrap.innerHTML='';
   db.assets.forEach((a,idx)=>{
-    const asset = document.createElement('section');
-    asset.className='card';
-    asset.innerHTML = `
+    const sec=document.createElement('section'); sec.className='card';
+    const sellPct=(SELL_STEPS[a.rungs-1]*100).toFixed(1), bbPct=(BUYBACK_STEPS[a.rungs-1]*100).toFixed(1);
+    sec.innerHTML=`
       <div class="asset-head">
         <span class="pill">${a.name}</span>
         <span class="pill">${a.rungs} rung(s)</span>
-        <span class="pill">start $${a.startPrice.toFixed(2)}</span>
-        <span class="pill">Sell +${(SELL_STEPS[a.rungs-1]*100).toFixed(1)}%</span>
-        <span class="pill">Buyback ${(BUYBACK_STEPS[a.rungs-1]*100).toFixed(1)}%</span>
+        <span class="pill">start $${Number(a.start).toFixed(2)}</span>
+        <span class="pill">Sell +${sellPct}%</span>
+        <span class="pill">Buyback ${bbPct}%</span>
         <span class="right"></span>
-        <button class="btn btn-ghost" data-i="${idx}" data-act="toggle" type="button">Toggle</button>
-        <button class="btn danger" data-i="${idx}" data-act="delete" type="button">Delete</button>
+        <button class="btn btn-ghost" data-i="${idx}" data-act="toggle">Toggle</button>
+        <button class="btn danger" data-i="${idx}" data-act="del">Delete</button>
       </div>
-      <div class="asset-body ${a.closed?'hide':''}" data-body="${idx}">
-        ${a.rungsHTML}
-      </div>
-    `;
-    el.appendChild(asset);
+      <div class="asset-body ${a.closed?'hide':''}" data-body="${idx}">${a.html}</div>`;
+    wrap.appendChild(sec);
   });
-  // wire buttons
-  el.querySelectorAll('button[data-act="toggle"]').forEach(b=>b.onclick=(e)=>{
-    const i = +e.currentTarget.dataset.i;
-    db.assets[i].closed = !db.assets[i].closed;
-    save(); render();
+
+  // Wire actions
+  wrap.querySelectorAll('button[data-act="toggle"]').forEach(b=>b.onclick=e=>{
+    const i=+e.currentTarget.dataset.i; db.assets[i].closed=!db.assets[i].closed; save(); render();
   });
-  el.querySelectorAll('button[data-act="delete"]').forEach(b=>b.onclick=(e)=>{
-    const i = +e.currentTarget.dataset.i;
-    db.assets.splice(i,1); save(); render();
+  wrap.querySelectorAll('button[data-act="del"]').forEach(b=>b.onclick=e=>{
+    const i=+e.currentTarget.dataset.i; db.assets.splice(i,1); save(); render();
   });
 }
 
-// Build a single rung table HTML
-function rungTableHTML(rows, rungNum){
-  const head = `
-    <div class="row row-head">
-      <div class="row-grid" style="font-weight:600">
-        <div>#</div>
-        <div>Planned Buy</div>
-        <div>Planned Sell</div>
-        <div>Profit/Share</div>
-        <div>Planned Shares</div>
-        <div>Planned Total</div>
-        <div>Buy Date</div>
-        <div>Sell Date</div>
-        <div>Cum Realized</div>
-      </div>
-    </div>`;
-  const body = rows.map(r=>`
-    <div class="row">
-      <div class="row-grid">
-        <div>${r.n}</div>
-        <input value="${r.plannedBuy}">
-        <input value="${r.plannedSell}">
-        <div>${fmtMoney(r.profitPer)}</div>
-        <input value="${r.plannedShares}">
-        <div>${fmtMoney(r.plannedTotal)}</div>
-        <input type="date" value="${r.buyDate||''}">
-        <input type="date" value="${r.sellDate||''}">
-        <div>${fmtMoney(r.cumRealized)}</div>
-      </div>
-    </div>
-  `).join('');
-  return `<h3 style="margin:6px 2px 8px 2px">Rung ${rungNum}</h3>${head}${body}`;
-}
+// ---------- Add/Replace ----------
+function addReplace(){
+  const name=$('#ticker').value.trim();
+  const rungs=parseInt($('#rungs').value,10);
+  const start=parseFloat($('#startPrice').value);
+  const shares=parseInt($('#defaultShares').value,10)||1;
+  if(!name){ alert('Please enter a Ticker / Name'); return; }
+  if(!isFinite(start)){ alert('Please enter a valid Start Price'); return; }
+  if(!isFinite(rungs) || rungs<1 || rungs>4){ alert('Rungs must be 1–4'); return; }
 
-// Create/replace asset
-function addOrReplaceAsset(){
-  const name = ($('#ticker').value||'').trim();
-  const rungs = parseInt($('#rungs').value,10);
-  const spRaw = ($('#startPrice').value||'').replace(',','.');
-  const startPrice = parseFloat(spRaw);
-  const defaultShares = parseInt($('#defaultShares').value||'1',10)||1;
-
-  if(!name){ alert('Enter a ticker/name'); return; }
-  if(!isFinite(startPrice)){ alert('Enter a valid start price'); return; }
-
-  // precompute rung HTML (so rendering is fast)
-  let rungsHTML = '';
-  for(let i=1;i<=rungs;i++){
-    const rows = buildRows(startPrice, i-1, defaultShares);
-    rungsHTML += rungTableHTML(rows, i);
-  }
-
-  // replace if name exists
-  const existing = db.assets.findIndex(a=>a.name.toLowerCase()===name.toLowerCase());
-  const record = {name, rungs, startPrice, defaultShares, rungsHTML, closed:false};
-  if (existing>=0) db.assets[existing] = record; else db.assets.push(record);
-
-  save(); render(); setStatus('saved');
+  let html='';
+  for(let i=1;i<=rungs;i++){ html += rungTable(buildRows(start, i-1, shares), i); }
+  const rec={name, rungs, start, shares, html, closed:false};
+  const ix=db.assets.findIndex(a=>a.name.toLowerCase()===name.toLowerCase());
+  if(ix>=0) db.assets[ix]=rec; else db.assets.push(rec);
+  save(); render(); cueSaved();
+  // Reset only ticker, keep other fields for faster entry
   $('#ticker').value='';
 }
 
-// ---------- Persistence ----------
-function save(){
-  localStorage.setItem('ladder_app_singlefile', JSON.stringify(db));
-}
-function load(){
-  const s = localStorage.getItem('ladder_app_singlefile');
-  try{ return s?JSON.parse(s):null }catch(e){ return null }
-}
-
-// ---------- Backups / CSV ----------
-$('#saveBtn').onclick = ()=>{
-  const blob = new Blob([JSON.stringify(db,null,2)], {type:'application/json'});
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = `ladder_backup_${Date.now()}.json`; a.click();
+// ---------- CSV / Backups ----------
+$('#saveBtn').onclick=()=>{
+  const blob=new Blob([JSON.stringify(db,null,2)], {type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='ladder_backup.json'; a.click();
 };
-$('#restoreBtn').onclick = ()=>{
-  const inp = document.createElement('input'); inp.type='file'; inp.accept='.json,application/json';
-  inp.onchange = (e)=>{
-    const f = e.target.files[0]; if(!f) return;
-    const r = new FileReader();
-    r.onload = () => { try{ db = JSON.parse(r.result); save(); render(); setStatus('restored'); }catch(e){ alert('Bad JSON'); } };
+$('#restoreBtn').onclick=()=>{
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='.json,application/json';
+  inp.onchange=e=>{ const f=e.target.files[0]; if(!f) return;
+    const r=new FileReader(); r.onload=()=>{ try{ db=JSON.parse(r.result); save(); render(); cueSaved(); }catch{ alert('Invalid JSON'); } };
     r.readAsText(f);
-  };
-  inp.click();
+  }; inp.click();
 };
-$('#csvBtn').onclick = ()=>{
-  const rows = [];
+$('#csvBtn').onclick=()=>{
+  const rows=[];
   db.assets.forEach(a=>{
-    rows.push(['Asset',a.name,'Rungs',a.rungs,'Start',a.startPrice]);
+    rows.push(['Asset',a.name,'Rungs',a.rungs,'Start',a.start].join(','));
   });
-  const csv = rows.map(r=>r.join(',')).join('\n');
-  const blob = new Blob([csv],{type:'text/csv'});
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = 'ladder_export.csv'; a.click();
+  const blob=new Blob([rows.join('\n')], {type:'text/csv'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='ladder_export.csv'; a.click();
 };
-$('#clearBtn').onclick = ()=>{ if(confirm('Clear all ladders on this device?')){ db={assets:[]}; save(); render(); } };
+$('#clearBtn').onclick=()=>{ if(confirm('Clear all ladders on this device?')){ db={assets:[]}; save(); render(); } };
 
-// Redundant wiring for iOS (in case inline onclick is blocked by content blockers)
-document.addEventListener('DOMContentLoaded', ()=>{
-  const btn = $('#addBtn');
-  if (btn) btn.addEventListener('click', addOrReplaceAsset);
-  render();
-});
+// Wire the add button (Safari-safe)
+$('#addBtn').addEventListener('click', addReplace);
+
+// Initial draw
+render();
 </script>
 </body>
 </html>
