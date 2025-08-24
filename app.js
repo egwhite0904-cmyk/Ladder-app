@@ -1,227 +1,287 @@
 
-(() => {
-  const $ = (sel, root=document) => root.querySelector(sel);
-  const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
-  const LS_KEY = 'ladderApp.v2';
+// ----- Helpers
+const $ = (sel, ctx=document)=>ctx.querySelector(sel);
+const $$ = (sel, ctx=document)=>Array.from(ctx.querySelectorAll(sel));
+const fmt = (n)=> isFinite(n) ? (n>=100 ? `$${n.toFixed(2)}` : `$${n.toFixed(2)}`) : '';
 
-  const state = load() || { assets: [] };
+const SAVE_KEY = 'ladder_app_assets_v2_dates';
 
-  const startPercents = {
-    sell:[0.025,0.045,0.07,0.10],
-    buyback:[0.01,0.025,0.035,0.05]
+const PRESETS = {
+  sell: {1:0.025, 2:0.045, 3:0.07, 4:0.10},
+  buyback: {1:0.01, 2:0.025, 3:0.035, 4:0.05},
+  cycles: 20
+};
+
+const statusEl = $('#status');
+function setStatus(s){ statusEl.textContent = s; }
+
+function save(state){
+  localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+  setStatus('saved');
+  setTimeout(()=>setStatus('ready'), 500);
+}
+function load(){
+  try{ return JSON.parse(localStorage.getItem(SAVE_KEY)||'[]') }catch(_){ return [] }
+}
+
+// ----- App State
+let assets = load();
+renderAssets();
+
+// ----- Controls
+$('#addAsset').addEventListener('click', ()=>{
+  const ticker = $('#ticker').value.trim();
+  const rungs = +$('#rungs').value || 3;
+  const start = parseFloat($('#startPrice').value);
+  const defShares = parseFloat($('#defaultShares').value) || 1;
+  if(!ticker || !isFinite(start)) { alert('Enter Ticker and Start Price'); return; }
+  const existIdx = assets.findIndex(a=>a.ticker.toUpperCase()===ticker.toUpperCase());
+  const asset = buildAsset(ticker, rungs, start, defShares);
+  if(existIdx>=0) assets[existIdx] = asset; else assets.unshift(asset);
+  save(assets);
+  renderAssets();
+  // scroll to asset
+  const card = document.getElementById(`asset-${asset.id}`);
+  card.scrollIntoView({behavior:'smooth', block:'start'});
+});
+
+$('#saveBackup').addEventListener('click', ()=>{
+  const dataStr = 'data:text/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(assets));
+  const a = document.createElement('a');
+  a.href = dataStr;
+  a.download = 'ladder_backup.json';
+  a.click();
+});
+
+$('#restoreBackup').addEventListener('click', async()=>{
+  const inp = document.createElement('input');
+  inp.type='file'; inp.accept='.json,application/json';
+  inp.onchange = ()=>{
+    const f = inp.files[0]; if(!f) return;
+    const r = new FileReader();
+    r.onload = ()=>{ try{
+      assets = JSON.parse(r.result); save(assets); renderAssets();
+    }catch(e){ alert('Invalid backup'); } };
+    r.readAsText(f);
   };
+  inp.click();
+});
 
-  // UI references
-  const addBtn = $('#addAsset');
-  const addPanel = $('#addPanel');
-  const confirmAdd = $('#confirmAdd');
-  const assetsHost = $('#assets');
-  const status = $('#status');
-
-  $('#saveBackup').onclick = () => {
-    const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
-    const a = document.createElement('a');
-    a.download = 'ladder_backup.json';
-    a.href = URL.createObjectURL(blob);
-    a.click();
-  };
-
-  $('#restoreBackup').onclick = async () => {
-    const input = document.createElement('input');
-    input.type='file';
-    input.accept='application/json';
-    input.onchange = async () => {
-      const file = input.files[0];
-      if(!file) return;
-      const text = await file.text();
-      try{
-        const obj = JSON.parse(text);
-        state.assets = obj.assets || [];
-        save();
-        render();
-      }catch(e){ alert('Invalid JSON'); }
-    };
-    input.click();
-  };
-
-  $('#exportCSV').onclick = () => {
-    const rows = [["Asset","Rung","Row","# Buy","# Sell","Profit/Share","Planned Shares","Planned Total","Buy Date","Sell Date"]];
-    state.assets.forEach(a => {
-      a.rows.forEach((r,i) => {
-        rows.push([a.name, a.rungs, i+1, r.buy, r.sell, profitPerShare(r).toFixed(2), r.shares, (r.shares*profitPerShare(r)).toFixed(2), r.buyDate||"", r.sellDate||""]);
+$('#exportCSV').addEventListener('click', ()=>{
+  const rows = [];
+  assets.forEach(a=>{
+    a.rungs.forEach((r, ri)=>{
+      r.rows.forEach((row, i)=>{
+        rows.push({
+          Ticker: a.ticker,
+          Rung: ri+1,
+          Row: i+1,
+          PlannedBuy: row.buy,
+          PlannedSell: row.sell,
+          ProfitPerShare: row.profitShare,
+          PlannedShares: row.shares,
+          PlannedTotal: row.plannedTotal,
+          BuyDate: row.buyDate||'',
+          SellDate: row.sellDate||'',
+          ActualBuy: row.actualBuy||'',
+          ActualSell: row.actualSell||'',
+          FilledQty: row.filledQty||'',
+          RealizedPL: row.realizedPL||'',
+          DeltaVsPlan: row.deltaVsPlan||'',
+          CumRealized: row.cumRealized||''
+        });
       });
     });
-    const csv = rows.map(r => r.map(x => `"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv], {type:'text/csv'});
-    const a = document.createElement('a');
-    a.download = 'ladder_export.csv';
-    a.href = URL.createObjectURL(blob);
-    a.click();
-  };
+  });
+  const headers = Object.keys(rows[0]||{Ticker:'',Rung:'',Row:''});
+  const csv = [headers.join(',')].concat(rows.map(r=>headers.map(h=>r[h]).join(','))).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download = 'ladder_export.csv';
+  a.click();
+});
 
-  $('#clearAll').onclick = () => {
-    if(confirm('Clear all ladders on this device?')){
-      state.assets = [];
-      save();
-      render();
-    }
-  };
-
-  addBtn.onclick = () => addPanel.classList.toggle('hidden');
-
-  confirmAdd.onclick = () => {
-    const name = $('#tickerInput').value.trim() || 'ASSET';
-    const rungs = parseInt($('#rungsInput').value,10);
-    const start = toNum($('#startInput').value);
-    const shares = parseInt($('#sharesInput').value || '1', 10);
-    if(!start){ alert('Enter a valid Start Price'); return; }
-    const rows = buildRows(rungs, start, shares);
-    // replace if exists
-    const idx = state.assets.findIndex(a => a.name.toLowerCase() === name.toLowerCase());
-    const asset = {
-      name, rungs, start, sharesDefault: shares,
-      sellPct: startPercents.sell[rungs-1],
-      buybackPct: startPercents.buyback[rungs-1],
-      rows
-    };
-    if(idx >= 0) state.assets[idx] = asset; else state.assets.unshift(asset);
-    save();
-    addPanel.classList.add('hidden');
-    render();
-  };
-
-  function buildRows(rungs, start, shares){
-    const sellPct = startPercents.sell[rungs-1];
-    const buybackPct = startPercents.buyback[rungs-1];
-    const out = [];
-    let buy = start;
-    for(let i=0;i<20;i++){
-      const sell = round2(buy * (1 + sellPct));
-      out.push({ buy: round2(buy), sell, shares, buyDate:"", sellDate:"" });
-      buy = round2(sell * (1 - buybackPct));
-    }
-    return out;
+$('#clearAll').addEventListener('click', ()=>{
+  if(confirm('Clear all data on this device?')){
+    assets=[]; save(assets); renderAssets();
   }
+});
 
-  function profitPerShare(r){ return round2(r.sell - r.buy); }
+// ----- Builders & Renderers
+function uid(){ return Math.random().toString(36).slice(2,9); }
 
-  function render(){
-    assetsHost.innerHTML = '';
-    state.assets.forEach(a => {
-      const tpl = $('#assetTemplate').content.cloneNode(true);
-      const card = tpl.querySelector('.asset');
-      card.dataset.name = a.name;
+function buildAsset(ticker, rungsCount, startPrice, defaultShares){
+  const asset = {
+    id: uid(),
+    ticker,
+    startPrice,
+    rungsCount,
+    defaultShares,
+    rungs: []
+  };
+  for(let r=1;r<=rungsCount;r++){
+    const sellPct = PRESETS.sell[r] ?? 0.025;
+    const buyback = PRESETS.buyback[r] ?? 0.01;
+    const rows = [];
+    // row 1
+    let buy = round2(startPrice);
+    let sell = round2(buy * (1+sellPct));
+    for(let i=0;i<PRESETS.cycles;i++){
+      const profitShare = round2(sell - buy);
+      rows.push({
+        buy, sell,
+        profitShare,
+        shares: defaultShares,
+        plannedTotal: round2(profitShare * defaultShares),
+        buyDate:'', sellDate:'',
+        actualBuy:'', actualSell:'', filledQty:'',
+        realizedPL:'', deltaVsPlan:'', cumRealized:''
+      });
+      // next row
+      buy = round2(sell * (1 - buyback));
+      sell = round2(buy * (1 + sellPct));
+    }
+    asset.rungs.push({sellPct, buyback, rows});
+  }
+  return asset;
+}
 
-      card.querySelector('.chip.name').textContent = a.name;
-      card.querySelector('.chip.rungs').textContent = `${a.rungs} rung(s)`;
-      card.querySelector('.chip.start').textContent = `start ${fmt(a.start)}`;
-      card.querySelector('.chip.sell').textContent = `Sell +${(a.sellPct*100).toFixed(1)}%`;
-      card.querySelector('.chip.buyback').textContent = `Buyback ${(a.buybackPct*100).toFixed(1)}%`;
+function round2(n){ return Math.round(n*100)/100; }
 
-      card.querySelector('[data-action="toggle"]').onclick = () => {
-        card.querySelector('.asset-body').classList.toggle('hidden');
-      };
-      card.querySelector('[data-action="delete"]').onclick = () => {
-        if(confirm(`Delete ${a.name}?`)){
-          state.assets = state.assets.filter(x => x !== a);
-          save(); render();
-        }
-      };
+function renderAssets(){
+  const wrap = $('#assets');
+  wrap.innerHTML='';
+  assets.forEach(a=>{
+    const card = document.createElement('div');
+    card.className='asset'; card.id=`asset-${a.id}`;
 
-      const tbody = card.querySelector('tbody');
-      a.rows.forEach((r, i) => {
+    // Header
+    const head = document.createElement('div');
+    head.className='assetHeader';
+    head.innerHTML = `
+      <div class="assetTitle">${a.ticker} — ${a.rungsCount} rung(s) • start ${fmt(a.startPrice)}</div>
+      <div class="assetButtons">
+        <button class="toggleBtn">Toggle</button>
+        <button class="danger delBtn">Delete</button>
+      </div>`;
+    card.appendChild(head);
+
+    // Badges
+    const badges = document.createElement('div');
+    badges.className='badges';
+    badges.innerHTML = a.rungs.map((r,i)=>
+      `<span class="badge">Sell +${(r.sellPct*100).toFixed(1)}%</span>
+       <span class="badge">Buyback ${(r.buyback*100).toFixed(1)}%</span>`
+    ).join('');
+    card.appendChild(badges);
+
+    // Table
+    const tableWrap = document.createElement('div'); tableWrap.className='tableWrap';
+    const table = document.createElement('table');
+    table.innerHTML = `
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Planned Buy</th>
+          <th>Planned Sell</th>
+          <th>Profit/Share</th>
+          <th>Planned Shares</th>
+          <th>Planned Total</th>
+          <th>Buy Date</th>
+          <th>Sell Date</th>
+          <th>Actual Buy</th>
+          <th>Actual Sell</th>
+          <th>Filled Qty</th>
+          <th>Realized P/L</th>
+          <th>Δ vs Plan</th>
+          <th>Cum Realized</th>
+        </tr>
+      </thead>
+      <tbody></tbody>`;
+    const tbody = $('tbody', table);
+
+    // Flatten rows across rungs but show “Rung X — Row” numbering
+    let cum = 0;
+    a.rungs.forEach((r, ri)=>{
+      r.rows.forEach((row, i)=>{
+        // compute derived values
+        row.plannedTotal = round2((row.profitShare||0) * (parseFloat(row.shares)||0));
+        const hasActual = isFinite(parseFloat(row.actualBuy)) && isFinite(parseFloat(row.actualSell)) && isFinite(parseFloat(row.filledQty));
+        row.realizedPL = hasActual ? round2((parseFloat(row.actualSell)-parseFloat(row.actualBuy)) * parseFloat(row.filledQty)) : '';
+        row.deltaVsPlan = hasActual ? round2(parseFloat(row.realizedPL) - row.plannedTotal) : '';
+        if(hasActual){ cum += parseFloat(row.realizedPL); row.cumRealized = round2(cum);} else { row.cumRealized = cum ? round2(cum) : ''; }
+
         const tr = document.createElement('tr');
 
-        const tdIdx = document.createElement('td');
-        tdIdx.textContent = (i+1);
-        tr.appendChild(tdIdx);
+        tr.innerHTML = `
+          <td>${i+1}</td>
+          <td class="money"><input type="number" step="0.01" value="${row.buy}"></td>
+          <td class="money"><input type="number" step="0.01" value="${row.sell}"></td>
+          <td class="money">${fmt(row.profitShare)}</td>
+          <td><input type="number" step="1" value="${row.shares}"></td>
+          <td class="money">${fmt(row.plannedTotal)}</td>
+          <td><input type="date" value="${row.buyDate||''}"></td>
+          <td><input type="date" value="${row.sellDate||''}"></td>
+          <td><input type="number" step="0.01" value="${row.actualBuy||''}"></td>
+          <td><input type="number" step="0.01" value="${row.actualSell||''}"></td>
+          <td><input type="number" step="1" value="${row.filledQty||''}"></td>
+          <td class="money">${row.realizedPL!==''?fmt(row.realizedPL):''}</td>
+          <td class="money">${row.deltaVsPlan!==''?fmt(row.deltaVsPlan):''}</td>
+          <td class="money">${row.cumRealized!==''?fmt(row.cumRealized):''}</td>
+        `;
 
-        const tdBuy = document.createElement('td');
-        tdBuy.className = 'cell';
-        const inBuy = inputAmount(r.buy);
-        inBuy.onchange = () => { r.buy = toNum(inBuy.value); save(); updateRow(tr, r, a); };
-        tdBuy.appendChild(inBuy);
-        tr.appendChild(tdBuy);
+        // wiring: inputs
+        const [inBuy,inSell,,inShares,,,,inActBuy,inActSell,inQty] = $$('input', tr);
+        inBuy.addEventListener('input', e=>{
+          row.buy = parseFloat(inBuy.value)||0;
+          row.profitShare = round2(row.sell - row.buy);
+          save(assets); renderAssets();
+        });
+        inSell.addEventListener('input', e=>{
+          row.sell = parseFloat(inSell.value)||0;
+          row.profitShare = round2(row.sell - row.buy);
+          save(assets); renderAssets();
+        });
+        inShares.addEventListener('input', ()=>{
+          row.shares = parseFloat(inShares.value)||0; save(assets); renderAssets();
+        });
 
-        const tdSell = document.createElement('td');
-        tdSell.className = 'cell';
-        const inSell = inputAmount(r.sell);
-        inSell.onchange = () => { r.sell = toNum(inSell.value); save(); updateRow(tr, r, a); };
-        tdSell.appendChild(inSell);
-        tr.appendChild(tdSell);
+        const dateInputs = $$('input[type="date"]', tr);
+        dateInputs.forEach((el, idx)=>{
+          el.addEventListener('input', ()=>{
+            if(idx===0) row.buyDate = el.value; else row.sellDate = el.value;
+            save(assets); renderAssets();
+          });
+        });
 
-        const tdProfit = document.createElement('td');
-        tdProfit.className = 'cell';
-        const roProfit = ro(fmt(profitPerShare(r)));
-        tdProfit.appendChild(roProfit);
-        tr.appendChild(tdProfit);
-
-        const tdShares = document.createElement('td');
-        tdShares.className = 'cell';
-        const inShares = document.createElement('input');
-        inShares.type='number'; inShares.step='1'; inShares.value = r.shares;
-        inShares.onchange = () => { r.shares = parseInt(inShares.value||'1',10); save(); updateRow(tr, r, a); };
-        tdShares.appendChild(inShares);
-        tr.appendChild(tdShares);
-
-        const tdTotal = document.createElement('td');
-        tdTotal.className = 'cell';
-        const roTotal = ro(fmt(r.shares * profitPerShare(r)));
-        tdTotal.appendChild(roTotal);
-        tr.appendChild(tdTotal);
-
-        const tdBuyDate = document.createElement('td');
-        tdBuyDate.className = 'cell';
-        const inBuyDate = document.createElement('input');
-        inBuyDate.type='date'; inBuyDate.className='date';
-        if(r.buyDate) inBuyDate.value = r.buyDate;
-        inBuyDate.onchange = () => { r.buyDate = inBuyDate.value; save(); };
-        tdBuyDate.appendChild(inBuyDate);
-        tr.appendChild(tdBuyDate);
-
-        const tdSellDate = document.createElement('td');
-        tdSellDate.className = 'cell';
-        const inSellDate = document.createElement('input');
-        inSellDate.type='date'; inSellDate.className='date';
-        if(r.sellDate) inSellDate.value = r.sellDate;
-        inSellDate.onchange = () => { r.sellDate = inSellDate.value; save(); };
-        tdSellDate.appendChild(inSellDate);
-        tr.appendChild(tdSellDate);
+        inActBuy.addEventListener('input', ()=>{ row.actualBuy = inActBuy.value; save(assets); renderAssets(); });
+        inActSell.addEventListener('input', ()=>{ row.actualSell = inActSell.value; save(assets); renderAssets(); });
+        inQty.addEventListener('input', ()=>{ row.filledQty = inQty.value; save(assets); renderAssets(); });
 
         tbody.appendChild(tr);
       });
-
-      assetsHost.appendChild(card);
+      // Insert a rung break row
+      const br = document.createElement('tr');
+      br.innerHTML = `<td colspan="14" class="grid-note">— End of Rung ${ri+1} —</td>`;
+      tbody.appendChild(br);
     });
-  }
 
-  function updateRow(tr, r, a){
-    // profit cell (3rd) and total (6th)
-    tr.children[3].querySelector('.ro').textContent = fmt(profitPerShare(r));
-    tr.children[5].querySelector('.ro').textContent = fmt(r.shares * profitPerShare(r));
-  }
+    tableWrap.appendChild(table);
+    card.appendChild(tableWrap);
+    wrap.appendChild(card);
 
-  function inputAmount(v){
-    const inp = document.createElement('input');
-    inp.type='number'; inp.step='0.01'; inp.inputMode='decimal';
-    inp.value = Number(v).toFixed(2);
-    inp.className='amount';
-    return inp;
-  }
-  function ro(text){
-    const span = document.createElement('span');
-    span.className='ro';
-    span.textContent = text;
-    return span;
-  }
-
-  function toNum(v){ return Math.round(parseFloat(v||'0')*100)/100 }
-  function round2(v){ return Math.round(v*100)/100 }
-  function fmt(v){ return '$' + Number(v).toFixed(2) }
-
-  function save(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); status.textContent='saved'; setTimeout(()=>status.textContent='ready',500) }
-  function load(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)||''); }catch(e){ return null; } }
-
-  // Initial render
-  render();
-})();
+    // Toggle visibility
+    let open = true;
+    const bodyEls = [badges, tableWrap];
+    $('.toggleBtn', head).addEventListener('click', ()=>{
+      open = !open;
+      bodyEls.forEach(el=>el.style.display = open ? '' : 'none');
+    });
+    $('.delBtn', head).addEventListener('click', ()=>{
+      if(confirm(`Delete ${a.ticker}?`)){
+        assets = assets.filter(x=>x.id!==a.id);
+        save(assets); renderAssets();
+      }
+    });
+  });
+}
