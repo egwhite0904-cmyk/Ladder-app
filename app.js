@@ -1,228 +1,280 @@
+// Ladder App v2 – accordion + rungs 2/3/4 + dates + autosave + wide inputs
 (() => {
-  const $ = (sel, el=document) => el.querySelector(sel);
+  const byId = (id) => document.getElementById(id);
   const $$ = (sel, el=document) => Array.from(el.querySelectorAll(sel));
-  const fmt = (n) => `$${Number(n).toFixed(2)}`;
 
-  const SELL_STEPS = [0.025, 0.045, 0.07, 0.10];
-  const BUYBACK_STEPS = [0.01, 0.025, 0.035, 0.05];
-  const CYCLES = 20;
-
-  const els = {
-    ticker: $('#ticker'),
-    rungs: $('#rungs'),
-    startPrice: $('#startPrice'),
-    defaultShares: $('#defaultShares'),
-    add: $('#addAsset'),
-    save: $('#saveBackup'),
-    restore: $('#restoreBackup'),
-    exportCsv: $('#exportCsv'),
-    clear: $('#clearAll'),
-    assets: $('#assets'),
-    status: $('#status'),
-    footStatus: $('#footStatus')
+  const SELL_PRESETS = {
+    2: [2.5, 4.5],
+    3: [2.5, 4.5, 7.0],
+    4: [2.5, 4.5, 7.0, 10.0],
   };
+  const BUYBACK_PRESETS = {
+    2: [1.0, 2.5],
+    3: [1.0, 2.5, 3.5],
+    4: [1.0, 2.5, 3.5, 5.0],
+  };
+  const ROWS = 20;
 
-  const storeKey = 'ladder_assets_v2';
+  let state = loadState();
 
-  const load = () => {
+  function loadState() {
     try {
-      const raw = localStorage.getItem(storeKey);
-      return raw ? JSON.parse(raw) : [];
-    } catch (e) { return []; }
-  };
-  const save = (assets) => localStorage.setItem(storeKey, JSON.stringify(assets));
+      const raw = localStorage.getItem('ladder_state_v2');
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return { assets: [] };
+  }
+  function saveState() {
+    localStorage.setItem('ladder_state_v2', JSON.stringify(state));
+    setReady(true);
+  }
+  function setReady(ok) {
+    const pill = byId('autosave-pill');
+    pill.textContent = ok ? 'saved' : '...';
+    pill.className = 'pill ' + (ok ? 'pill-ok' : '');
+    if (ok) setTimeout(() => { pill.textContent = 'ready'; }, 800);
+  }
 
-  function buildRows(start, rungIdx, shares) {
-    const sellPct = SELL_STEPS[rungIdx];
-    const buybackPct = BUYBACK_STEPS[rungIdx];
+  function fmt(n) {
+    if (n === '' || n == null || isNaN(n)) return '';
+    return Number(n).toFixed(2);
+  }
+
+  function buildRows(start, sellPct, buybackPct, defaultShares) {
     const rows = [];
     let buy = Number(start);
-    for (let i=0;i<CYCLES;i++){
-      const sell = buy * (1 + sellPct);
+    for (let i = 0; i < ROWS; i++) {
+      const sell = buy * (1 + sellPct/100);
+      const profit = sell - buy;
       rows.push({
-        buy: Number(buy.toFixed(2)),
-        sell: Number(sell.toFixed(2)),
-        profit: Number((sell - buy).toFixed(2)),
-        shares
+        idx: i+1,
+        buy: +fmt(buy),
+        sell: +fmt(sell),
+        profit: +fmt(profit),
+        shares: defaultShares,
+        total: +fmt(profit * defaultShares),
+        buyDate: '',
+        sellDate: '',
+        realized: '',
+        cum: ''
       });
-      buy = sell * (1 - buybackPct);
+      buy = sell * (1 - buybackPct/100);
     }
     return rows;
   }
 
-  function buildAsset(ticker, startPrice, rungs, defShares) {
-    const rungCount = Number(rungs);
-    const data = [];
-    for (let r=0;r<rungCount;r++){
-      data.push(buildRows(startPrice, r, Number(defShares || 1)));
-    }
-    return { id: Date.now()+Math.random().toString(16).slice(2), ticker, startPrice: Number(startPrice), rungs: rungCount, shares: Number(defShares||1), data };
+  function addOrReplaceAsset(ticker, rungs, start, defaultShares) {
+    // Use rung-specific sell/buyback from presets
+    const sellPercents = SELL_PRESETS[rungs];
+    const buybackPercents = BUYBACK_PRESETS[rungs];
+    const ladders = sellPercents.map((sp, i) => ({
+      name: `Rung ${i+1}`,
+      sellPct: sp,
+      buybackPct: buybackPercents[i] ?? buybackPercents[buybackPercents.length-1],
+      rows: buildRows(start, sp, buybackPercents[i] ?? buybackPercents[0], defaultShares)
+    }));
+
+    // Replace if ticker exists (case-insensitive), else push
+    const ix = state.assets.findIndex(a => a.ticker.toLowerCase() === ticker.toLowerCase());
+    const asset = { ticker, start: Number(start), rungs, defaultShares, ladders };
+    if (ix >= 0) state.assets[ix] = asset; else state.assets.push(asset);
+    saveState();
+    render();
+  }
+
+  function recalcPlannedTotals(asset) {
+    asset.ladders.forEach(l => {
+      l.rows.forEach(row => {
+        const profit = Number(row.sell) - Number(row.buy);
+        row.profit = +fmt(profit);
+        row.total = +fmt(profit * Number(row.shares || 0));
+      });
+    });
   }
 
   function render() {
-    const assets = load();
-    els.assets.innerHTML = '';
-    assets.forEach(asset => {
-      els.assets.appendChild(renderAssetCard(asset));
+    const wrap = byId('assets');
+    wrap.innerHTML = '';
+    state.assets.forEach((asset, aIdx) => {
+      const node = renderAsset(asset, aIdx);
+      wrap.appendChild(node);
     });
   }
 
-  function renderAssetCard(asset) {
-    const card = document.createElement('section');
-    card.className = 'asset-card card';
-    card.dataset.id = asset.id;
+  function renderAsset(asset, aIdx) {
+    const tpl = byId('assetTpl');
+    const el = tpl.content.firstElementChild.cloneNode(true);
 
-    const head = document.createElement('div');
-    head.className = 'asset-head';
+    el.querySelector('.chip-name').textContent = asset.ticker;
+    el.querySelector('.chip-rungs').textContent = `${asset.rungs} rung(s)`;
+    el.querySelector('.chip-start').textContent = `start ${fmt(asset.start)}`;
 
-    const meta = document.createElement('div');
-    meta.className = 'asset-meta';
-    meta.innerHTML = `
-      <span class="pill">${asset.ticker}</span>
-      <span class="pill">${asset.rungs} rung(s)</span>
-      <span class="pill">start ${fmt(asset.startPrice)}</span>
-    `;
+    // show rung 1 chips initially
+    el.querySelector('.chip-sell').textContent = `Sell +${asset.ladders[0].sellPct}%`;
+    el.querySelector('.chip-buyback').textContent = `Buyback ${asset.ladders[0].buybackPct}%`;
 
-    const headBtns = document.createElement('div');
-    headBtns.innerHTML = `
-      <button class="btn small" data-action="toggle">Toggle</button>
-      <button class="btn small danger" data-action="delete">Delete</button>
-    `;
+    const tbody = el.querySelector('tbody');
+    // default to Rung 1 shown; others appended below separated by headings
+    asset.ladders.forEach((l, li) => {
+      const heading = document.createElement('tr');
+      heading.className = 'rung-h';
+      heading.innerHTML = `<td class="cell-idx"></td>
+        <td colspan="9"><b>${asset.ticker} — ${l.name}</b> · Sell +${l.sellPct}% · Buyback ${l.buybackPct}%</td>`;
+      tbody.appendChild(heading);
 
-    head.append(meta, headBtns);
-
-    const body = document.createElement('div');
-    body.className = 'asset-body';
-    body.appendChild(renderRungs(asset));
-
-    card.append(head, body);
-
-    headBtns.addEventListener('click', (e) => {
-      const action = e.target.dataset.action;
-      if (action === 'toggle'){
-        body.classList.toggle('hidden');
-      } else if (action === 'delete'){
-        const assets = load().filter(a => a.id !== asset.id);
-        save(assets);
-        render();
-      }
-    });
-
-    return card;
-  }
-
-  function renderRungs(asset){
-    const wrap = document.createElement('div');
-    asset.data.forEach((rows, rIdx) => {
-      const section = document.createElement('div');
-      section.style.marginTop = '8px';
-      const title = document.createElement('div');
-      title.innerHTML = `<strong>${asset.ticker} — Rung ${rIdx+1}</strong> <span class="pill">Sell +${(SELL_STEPS[rIdx]*100).toFixed(1)}%</span> <span class="pill">Buyback ${(BUYBACK_STEPS[rIdx]*100).toFixed(1)}%</span>`;
-      section.appendChild(title);
-
-      const table = document.createElement('table');
-      table.className = 'table';
-      const thead = document.createElement('thead');
-      thead.innerHTML = `<tr>
-        <th>#</th>
-        <th>Planned Buy</th>
-        <th>Planned Sell</th>
-        <th>Profit/Share</th>
-        <th>Planned Shares</th>
-        <th>Planned Total</th>
-      </tr>`;
-      table.appendChild(thead);
-      const tbody = document.createElement('tbody');
-      rows.forEach((row, i) => {
+      l.rows.forEach((r, ri) => {
         const tr = document.createElement('tr');
-        const total = (row.profit * row.shares).toFixed(2);
         tr.innerHTML = `
-          <td>${i+1}</td>
-          <td class="cell"><input value="${row.buy.toFixed(2)}"></td>
-          <td class="cell"><input value="${row.sell.toFixed(2)}"></td>
-          <td>${fmt(row.profit)}</td>
-          <td class="cell"><input value="${row.shares}"></td>
-          <td>${fmt(total)}</td>
-        `;
+          <td class="cell-idx">${r.idx}</td>
+          <td class="cell"><input type="number" step="0.01" value="${fmt(r.buy)}" data-k="buy"></td>
+          <td class="cell"><input type="number" step="0.01" value="${fmt(r.sell)}" data-k="sell"></td>
+          <td class="cell cell-num">$${fmt(r.profit)}</td>
+          <td class="cell"><input type="number" step="1" min="0" value="${r.shares}" data-k="shares" class="small"></td>
+          <td class="cell cell-num">$${fmt(r.total)}</td>
+          <td class="cell"><input type="date" value="${r.buyDate||''}" data-k="buyDate" class="cell-date"></td>
+          <td class="cell"><input type="date" value="${r.sellDate||''}" data-k="sellDate" class="cell-date"></td>
+          <td class="cell"><input type="number" step="0.01" value="${r.realized||''}" data-k="realized" class="cell-num"></td>
+          <td class="cell cell-num">$${fmt(r.cum)}</td>`;
+        // attach listeners
+        $$('input', tr).forEach(inp => {
+          inp.addEventListener('input', () => {
+            const k = inp.dataset.k;
+            let v = inp.value;
+            if (k === 'buy' || k === 'sell' || k === 'shares' || k === 'realized') {
+              v = v === '' ? '' : Number(v);
+            }
+            r[k] = v;
+            // recompute dependent fields
+            r.profit = +fmt(Number(r.sell) - Number(r.buy));
+            r.total  = +fmt((Number(r.sell) - Number(r.buy)) * Number(r.shares||0));
+            // cumulative realized within the ladder
+            const ladder = asset.ladders[li];
+            let cum = 0;
+            ladder.rows.forEach((rr, j) => {
+              cum += Number(rr.realized || 0);
+              rr.cum = +fmt(cum);
+            });
+            recalcPlannedTotals(asset);
+            saveState();
+            render(); // quick re-render keeps it simple
+          });
+        });
         tbody.appendChild(tr);
       });
-      table.appendChild(tbody);
-      section.appendChild(table);
-      wrap.appendChild(section);
     });
-    return wrap;
+
+    // actions
+    el.querySelector('.btn-delete').addEventListener('click', () => {
+      state.assets.splice(aIdx, 1);
+      saveState(); render();
+    });
+    el.querySelector('.btn-toggle').addEventListener('click', () => {
+      el.classList.toggle('collapsed');
+    });
+
+    return el;
   }
 
-  // Buttons
-  els.add.addEventListener('click', () => {
-    const ticker = (els.ticker.value || '').trim();
-    const start = parseFloat(els.startPrice.value);
-    const rungs = parseInt(els.rungs.value, 10);
-    const shares = parseInt(els.defaultShares.value || '1', 10);
-    if (!ticker || !(start>0)) {
-      alert('Enter ticker and a valid start price.'); return;
-    }
-    // Add new OR replace same-ticker
-    let assets = load().filter(a => a.ticker.toLowerCase() !== ticker.toLowerCase());
-    assets.unshift(buildAsset(ticker.toUpperCase(), start, rungs, shares));
-    save(assets);
-    render();
-    document.getElementById('status').textContent = 'saved';
-    setTimeout(()=>document.getElementById('status').textContent='ready',1200);
+  // Add/Replace
+  byId('btnAdd').addEventListener('click', () => {
+    const t = byId('inTicker').value.trim();
+    const r = Number(byId('inRungs').value);
+    const s = Number(byId('inStart').value);
+    const sh = Number(byId('inShares').value || 1);
+    if (!t || isNaN(s)) return;
+    addOrReplaceAsset(t, r, s, sh);
+    // Clear inputs minimally
+    byId('inTicker').value = '';
   });
 
-  els.clear.addEventListener('click', () => {
-    if (confirm('Clear all ladders on this device?')){
-      localStorage.removeItem(storeKey);
-      render();
-    }
-  });
-
-  els.save.addEventListener('click', () => {
-    const data = JSON.stringify(load(), null, 2);
-    const blob = new Blob([data], {type:'application/json'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'ladder_backup.json';
-    a.click();
-    URL.revokeObjectURL(a.href);
-  });
-
-  els.restore.addEventListener('click', async () => {
-    const inp = document.createElement('input');
-    inp.type = 'file'; inp.accept = 'application/json';
-    inp.onchange = () => {
-      const file = inp.files[0];
-      const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          const arr = JSON.parse(reader.result);
-          if (Array.isArray(arr)) { save(arr); render(); }
-        } catch {}
-      };
-      reader.readAsText(file);
-    };
-    inp.click();
-  });
-
-  els.exportCsv.addEventListener('click', () => {
-    const assets = load();
-    const lines = ['Ticker,Rung,Row,Planned Buy,Planned Sell,Profit/Share,Planned Shares,Planned Total'];
-    assets.forEach(a => {
-      a.data.forEach((rows,rIdx) => {
-        rows.forEach((row,i) => {
-          const total = (row.profit * row.shares).toFixed(2);
-          lines.push([a.ticker, rIdx+1, i+1, row.buy.toFixed(2), row.sell.toFixed(2), row.profit.toFixed(2), row.shares, total].join(','));
+  // Export CSV of all assets
+  byId('btnExport').addEventListener('click', () => {
+    const rows = [];
+    state.assets.forEach(a => {
+      a.ladders.forEach(l => {
+        l.rows.forEach(r => {
+          rows.push({
+            Ticker: a.ticker,
+            Rung: l.name,
+            Start: a.start,
+            PlannedBuy: r.buy,
+            PlannedSell: r.sell,
+            ProfitPerShare: r.profit,
+            PlannedShares: r.shares,
+            PlannedTotal: r.total,
+            BuyDate: r.buyDate,
+            SellDate: r.sellDate,
+            RealizedPL: r.realized,
+            CumRealized: r.cum
+          });
         });
       });
     });
-    const blob = new Blob([lines.join('\n')], {type:'text/csv'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'ladders.csv';
-    a.click(); URL.revokeObjectURL(a.href);
+    const csv = toCSV(rows);
+    downloadText(csv, 'ladder_export.csv');
   });
 
-  // initial
+  // Backup/restore/clear
+  byId('btnSave').addEventListener('click', () => {
+    downloadText(JSON.stringify(state, null, 2), 'ladder_backup.json');
+  });
+  byId('btnRestore').addEventListener('click', async () => {
+    const file = await pickFile('.json');
+    if (!file) return;
+    const txt = await file.text();
+    try {
+      state = JSON.parse(txt);
+      saveState(); render();
+    } catch (e) { alert('Invalid JSON'); }
+  });
+  byId('btnClear').addEventListener('click', () => {
+    if (!confirm('Clear all data on this device?')) return;
+    state = { assets: [] };
+    saveState(); render();
+  });
+
+  // util: csv
+  function toCSV(arr) {
+    if (!arr.length) return '';
+    const cols = Object.keys(arr[0]);
+    const esc = (v) => {
+      if (v == null) return '';
+      const s = String(v);
+      if (/[",\n]/.test(s)) return '"' + s.replace(/"/g,'""') + '"';
+      return s;
+    };
+    return [cols.join(','), ...arr.map(o => cols.map(k => esc(o[k])).join(','))].join('\n');
+  }
+  function downloadText(text, filename) {
+    const blob = new Blob([text], {type:'text/plain'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+  async function pickFile(accept) {
+    return new Promise((resolve) => {
+      const inp = document.createElement('input');
+      inp.type = 'file';
+      if (accept) inp.accept = accept;
+      inp.addEventListener('change', () => resolve(inp.files[0]));
+      inp.click();
+    });
+  }
+
+  // initial render
   render();
+  setReady(true);
+
+  // Simple tabs (future: charts)
+  $$('.tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      $$('.tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const name = btn.dataset.tab;
+      $$('.tabpane').forEach(p => p.classList.remove('active'));
+      byId(name).classList.add('active');
+    });
+  });
 })();

@@ -1,66 +1,116 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Ladder App</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="ladder.svg">
+  <link rel="stylesheet" href="styles.css?v=1003" />
 </head>
 <body>
   <header class="topbar">
     <div class="brand">
-      <img src="ladder.svg" alt="" class="logo">
+      <img src="ladder.svg" alt="ladder" class="logo">
       <span>Ladder App</span>
     </div>
-    <div id="status" class="status">ready</div>
+    <div id="autosave-pill" class="pill pill-ok">ready</div>
   </header>
 
   <main class="container">
-    <section class="controls card">
-      <div class="grid2">
-        <div>
-          <label>Ticker / Name</label>
-          <input id="ticker" placeholder="RIOT or MU">
-        </div>
-        <div>
-          <label>Rungs</label>
-          <select id="rungs">
-            <option value="2">2 rungs</option>
-            <option value="3" selected>3 rungs</option>
-            <option value="4">4 rungs</option>
-          </select>
-        </div>
-        <div>
-          <label>Start Price</label>
-          <input id="startPrice" inputmode="decimal" placeholder="current price">
-        </div>
-        <div>
-          <label>Default Shares / row</label>
-          <input id="defaultShares" inputmode="numeric" value="1">
-        </div>
-      </div>
+    <nav class="tabs">
+      <button class="tab active" data-tab="ladders">Ladders</button>
+      <button class="tab" data-tab="charts" disabled>Charts</button>
+    </nav>
 
-      <div class="preset-note">
-        Baseline presets (locked): Sell +2.5%, +4.5%, +7.0% (+10% for rung 4). Buyback 1%, 2.5%, 3.5%, 5%. 20 cycles.
-        Row 1 Planned Buy equals Start Price. Each next row uses:
-        <code>nextBuy = prevSell × (1 − buyback%)</code> and
-        <code>sell = buy × (1 + sell%)</code>.
-      </div>
+    <section id="ladders" class="tabpane active">
+      <form id="addForm" class="card controls" onsubmit="return false;">
+        <div class="row">
+          <label>Ticker / Name
+            <input id="inTicker" placeholder="e.g., RIOT or MU" required>
+          </label>
+          <label>Rungs
+            <select id="inRungs">
+              <option value="2">2 rungs</option>
+              <option value="3" selected>3 rungs</option>
+              <option value="4">4 rungs</option>
+            </select>
+          </label>
+          <label>Start Price
+            <input id="inStart" type="number" step="0.01" placeholder="current price" required>
+          </label>
+          <label>Default Shares / row
+            <input id="inShares" type="number" step="1" min="1" value="1">
+          </label>
+        </div>
 
-      <div class="buttons">
-        <button id="addAsset" class="btn green">+ Add / Replace Asset</button>
-        <button id="saveBackup" class="btn">Save Backup (JSON)</button>
-        <button id="restoreBackup" class="btn">Restore Backup (JSON)</button>
-        <button id="exportCsv" class="btn">Export CSV (Excel)</button>
-        <button id="clearAll" class="btn danger">Clear All (this device)</button>
-      </div>
+        <div class="hint">
+          Baseline presets (locked): Sell +2.5%, +4.5%, +7.0% (+10% when 4 rungs).
+          Buyback 1.0%, 2.5%, 3.5% (+5% when 4 rungs). 20 cycles.
+          Row 1 <b>Planned Buy</b> equals <b>Start Price</b>.
+          Each next row uses:
+          <code>nextBuy = prevSell × (1 − buyback%)</code> and
+          <code>sell = buy × (1 + sell%)</code>. Edit any cell inline.
+        </div>
+
+        <div class="buttons">
+          <button id="btnAdd" class="btn btn-primary">+ Add / Replace Asset</button>
+          <button id="btnSave" class="btn">Save Backup (JSON)</button>
+          <button id="btnRestore" class="btn">Restore Backup (JSON)</button>
+          <button id="btnExport" class="btn btn-blue">Export CSV (Excel)</button>
+          <button id="btnClear" class="btn btn-danger">Clear All (this device)</button>
+        </div>
+      </form>
+
+      <div id="assets"></div>
     </section>
 
-    <section id="assets"></section>
+    <section id="charts" class="tabpane">
+      <div class="card">Charts will go here later.</div>
+    </section>
   </main>
 
-  <footer class="foot">egwhite0904-cmyk.github.io • <span id="footStatus">JS loaded</span></footer>
+  <template id="assetTpl">
+    <div class="asset card">
+      <div class="asset-h">
+        <div class="asset-tags">
+          <span class="chip chip-name"></span>
+          <span class="chip chip-rungs"></span>
+          <span class="chip chip-start"></span>
+        </div>
+        <div class="asset-actions">
+          <button class="btn btn-light btn-toggle">Toggle</button>
+          <button class="btn btn-danger btn-delete">Delete</button>
+        </div>
+      </div>
 
-  <script src="app.js"></script>
+      <div class="asset-b">
+        <div class="subchips">
+          <span class="chip chip-sell"></span>
+          <span class="chip chip-buyback"></span>
+        </div>
+        <div class="table-wrap">
+          <table class="grid">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Planned Buy</th>
+                <th>Planned Sell</th>
+                <th>Profit/Share</th>
+                <th>Planned Shares</th>
+                <th>Planned Total</th>
+                <th>Buy Date</th>
+                <th>Sell Date</th>
+                <th>Realized P/L</th>
+                <th>Cum Realized</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <script src="app.js?v=1007"></script>
 </body>
 </html>
