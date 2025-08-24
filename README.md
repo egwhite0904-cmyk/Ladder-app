@@ -1,6 +1,5 @@
 # Ladder App (Baseline)
 
-This is the original working baseline version of the Ladder App.
-- Supports multiple assets with toggles
-- Allows adding and replacing assets
-- Basic ladder functionality working
+This is the *baseline* version — **no charts**, **3 rungs only**, asset **toggles**, and the original ladder math. Data is saved in `localStorage` (`LADDER_APP_BASELINE`).
+
+Uploaded: 2025-08-24T11:38:03.131676Z
