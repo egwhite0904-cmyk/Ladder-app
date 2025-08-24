@@ -5,10 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ladder App</title>
 <style>
-  :root{
-    --bg:#f1f5f9;--card:#ffffff;--text:#0f172a;--muted:#475569;--line:#cbd5e1;
-    --brand:#047857;--danger:#dc2626;--pill:#e2e8f0;
-  }
+  :root{--bg:#f1f5f9;--card:#ffffff;--text:#0f172a;--muted:#475569;--line:#cbd5e1;--brand:#047857;--danger:#dc2626;--pill:#e2e8f0;}
   html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif}
   .nav{position:sticky;top:0;z-index:5;background:linear-gradient(90deg,#16a085,#2ecc71);color:#fff;padding:14px 16px;display:flex;align-items:center;gap:12px}
   .brand{font-weight:800;font-size:22px;letter-spacing:.3px}
@@ -16,13 +13,10 @@
   .container{max-width:980px;margin:14px auto;padding:0 12px}
   .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 14px 12px 14px;margin-bottom:14px;box-shadow:0 1px 10px rgba(2,6,23,.05)}
   h2{margin:0 0 10px 0;font-size:18px}
-  .form-grid{display:grid;grid-template-columns:1fr 140px 1fr 140px;gap:12px}
+  .form-grid{display:grid;grid-template-columns:1fr 120px 1fr 140px;gap:12px}
   .form-grid label{display:flex;flex-direction:column;gap:6px}
   .form-grid span{font-size:12px;color:var(--muted)}
-  .input, select{
-    width:100%;height:44px;font-size:16px;padding:8px 10px;border:1px solid var(--line);
-    border-radius:10px;background:#fff;box-sizing:border-box;
-  }
+  .input, select{width:100%;height:44px;font-size:16px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;box-sizing:border-box;}
   @media (max-width:640px){.form-grid{grid-template-columns:1fr 1fr}}
   .btn{height:46px;border:none;border-radius:12px;padding:0 14px;font-size:16px;cursor:pointer}
   .btn-primary{background:var(--brand);color:#fff;width:100%;margin-top:10px}
@@ -37,15 +31,9 @@
 
   /* Row grid with fixed column widths so dollars & dates are visible on iPhone */
   .row{background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px}
-  .row-grid{
-    display:grid;
-    grid-template-columns: 36px 120px 120px 92px 92px 108px 132px 132px 110px;
-    gap:10px; align-items:center;
-  }
+  .row-grid{display:grid;grid-template-columns: 36px 120px 120px 92px 92px 112px 132px 132px 120px;gap:10px; align-items:center;}
   .row-grid .num{font-variant-numeric:tabular-nums}
-  .row-grid input[type="text"],
-  .row-grid input[type="number"],
-  .row-grid input[type="date"]{
+  .row-grid input[type="text"], .row-grid input[type="number"], .row-grid input[type="date"]{
     width:100%;height:40px;font-size:16px;border:1px solid var(--line);border-radius:8px;padding:6px 8px;box-sizing:border-box;
   }
   .row-head{font-weight:600;background:#f8fafc}
@@ -54,25 +42,22 @@
 <body>
   <div class="nav">
     <div class="brand">Ladder App</div>
-    <div class="status-pill">ready</div>
+    <div class="status-pill" id="pill">ready</div>
   </div>
 
   <div class="container">
-    <!-- New / Replace -->
+    <!-- Add / Replace (tap-test style) -->
     <section class="card">
       <h2>New / Replace Asset</h2>
-      <!-- NOTE: not a form; Safari won't block clicks -->
       <div class="form-grid">
         <label><span>Ticker / Name</span><input id="ticker" class="input" placeholder="e.g., RIOT"></label>
         <label><span>Rungs</span>
-          <select id="rungs" class="input">
-            <option>1</option><option>2</option><option selected>3</option><option>4</option>
-          </select>
+          <select id="rungs" class="input"><option>1</option><option>2</option><option selected>3</option><option>4</option></select>
         </label>
         <label><span>Start Price</span><input id="startPrice" class="input" type="number" step="0.01" placeholder="current price"></label>
         <label><span>Default Shares / row</span><input id="defaultShares" class="input" type="number" step="1" min="1" value="1"></label>
       </div>
-      <button id="addBtn" class="btn btn-primary" type="button">+ Add / Replace Asset</button>
+      <button id="addBtn" class="btn btn-primary" type="button" onclick="addReplace()">+ Add / Replace Asset</button>
       <div style="font-size:12px;color:#475569;margin-top:10px">
         Presets (locked): Sell +2.5%, +4.5%, +7.0%, +10% (rungs 1–4). Buyback 1%, 2.5%, 3.5%, 5% (rungs 1–4). 20 cycles.
         Row 1 Planned Buy equals <b>Start Price</b>. Each next row uses:
@@ -89,72 +74,69 @@
 
     <div id="assets"></div>
 
-    <div class="footer">egwhite0904-cmyk.github.io • single-file build</div>
+    <div class="footer">single-file build • tap-test engine</div>
   </div>
 
 <script>
 // ---------- Helpers ----------
 const $ = (s)=>document.querySelector(s);
-const pad = (n)=>String(n).padStart(2,'0');
-const money = (n)=> isFinite(n) ? '$' + Number(n).toFixed(2) : '$0.00';
 const SELL_STEPS=[0.025,0.045,0.07,0.10];
 const BUYBACK_STEPS=[0.01,0.025,0.035,0.05];
 const ROWS=20;
-let db = load() || {assets:[]};
+const money = (n)=> isFinite(n) ? '$' + Number(n).toFixed(2) : '$0.00';
+let db = load() || { assets: [] };
 
-function cueSaved(txt='saved'){
-  const pill=$('.status-pill'); const old=pill.textContent;
-  pill.textContent=txt; setTimeout(()=>pill.textContent='ready',900);
-}
-
-// ---------- Persistence ----------
-function save(){ localStorage.setItem('ladder_app_singlefile_v4', JSON.stringify(db)); }
-function load(){ try{ return JSON.parse(localStorage.getItem('ladder_app_singlefile_v4')||''); }catch(e){ return null; } }
+function setPill(txt='ready'){ const p=$('#pill'); p.textContent=txt; if(txt!=='ready') setTimeout(()=>p.textContent='ready',900); }
+function save(){ localStorage.setItem('ladder_app_tapbuild_v1', JSON.stringify(db)); }
+function load(){ try{ return JSON.parse(localStorage.getItem('ladder_app_tapbuild_v1')||''); }catch(e){ return null; } }
 
 // ---------- Build Rows ----------
 function buildRows(start, rungIdx, shares){
-  const sellPct = SELL_STEPS[Math.min(rungIdx, SELL_STEPS.length-1)];
-  const buyback = BUYBACK_STEPS[Math.min(rungIdx, BUYBACK_STEPS.length-1)];
-  const rows=[]; let buy=start;
+  const s=SELL_STEPS[Math.min(rungIdx,3)], b=BUYBACK_STEPS[Math.min(rungIdx,3)];
+  const out=[]; let buy=start;
   for(let i=1;i<=ROWS;i++){
-    const sell = buy*(1+sellPct);
-    const profit = sell-buy;
-    rows.push({
-      n:i, buy:buy.toFixed(2), sell:sell.toFixed(2),
-      profit:profit.toFixed(2), shares:shares,
-      total:(profit*shares).toFixed(2),
-      bdate:'', sdate:'', cum:'0.00'
+    const sell=buy*(1+s);
+    const prof=sell-buy;
+    out.push({
+      n:i,
+      buy:buy.toFixed(2),
+      sell:sell.toFixed(2),
+      profit:prof.toFixed(2),
+      shares:shares,
+      total:(prof*shares).toFixed(2),
+      bdate:'',
+      sdate:'',
+      cum:'0.00'
     });
-    buy = sell*(1-buyback);
+    buy = sell*(1-b);
   }
-  return rows;
+  return out;
 }
 
-// ---------- Renders ----------
+// ---------- Templating ----------
 function rowHTML(r){
-  return `<div class="row">
-    <div class="row-grid">
-      <div class="num">${r.n}</div>
-      <input type="text" value="${r.buy}">
-      <input type="text" value="${r.sell}">
-      <div class="num">${money(+r.profit)}</div>
-      <input type="number" min="0" step="1" value="${r.shares}">
-      <div class="num">${money(+r.total)}</div>
-      <input type="date" value="${r.bdate}">
-      <input type="date" value="${r.sdate}">
-      <div class="num">${money(+r.cum)}</div>
-    </div>
-  </div>`;
+  return `<div class="row"><div class="row-grid">
+    <div class="num">${r.n}</div>
+    <input type="text" value="${r.buy}">
+    <input type="text" value="${r.sell}">
+    <div class="num">${money(+r.profit)}</div>
+    <input type="number" min="0" step="1" value="${r.shares}">
+    <div class="num">${money(+r.total)}</div>
+    <input type="date" value="${r.bdate}">
+    <input type="date" value="${r.sdate}">
+    <div class="num">${money(+r.cum)}</div>
+  </div></div>`;
 }
 
-function rungTable(rows, i){
+function rungHTML(rows, i){
   const head=`<div class="row row-head"><div class="row-grid">
-      <div>#</div><div>Planned Buy</div><div>Planned Sell</div><div>Profit/Share</div>
-      <div>Planned Shares</div><div>Planned Total</div><div>Buy Date</div>
-      <div>Sell Date</div><div>Cum Realized</div></div></div>`;
+    <div>#</div><div>Planned Buy</div><div>Planned Sell</div><div>Profit/Share</div>
+    <div>Planned Shares</div><div>Planned Total</div><div>Buy Date</div><div>Sell Date</div><div>Cum Realized</div>
+  </div></div>`;
   return `<h3 style="margin:6px 2px 8px 2px">Rung ${i}</h3>${head}${rows.map(rowHTML).join('')}`;
 }
 
+// ---------- Render ----------
 function render(){
   const wrap=$('#assets'); wrap.innerHTML='';
   db.assets.forEach((a,idx)=>{
@@ -168,8 +150,8 @@ function render(){
         <span class="pill">Sell +${sellPct}%</span>
         <span class="pill">Buyback ${bbPct}%</span>
         <span class="right"></span>
-        <button class="btn btn-ghost" data-i="${idx}" data-act="toggle">Toggle</button>
-        <button class="btn danger" data-i="${idx}" data-act="del">Delete</button>
+        <button class="btn btn-ghost" data-i="${idx}" data-act="toggle" type="button">Toggle</button>
+        <button class="btn danger" data-i="${idx}" data-act="del" type="button">Delete</button>
       </div>
       <div class="asset-body ${a.closed?'hide':''}" data-body="${idx}">${a.html}</div>`;
     wrap.appendChild(sec);
@@ -177,34 +159,49 @@ function render(){
 
   // Wire actions
   wrap.querySelectorAll('button[data-act="toggle"]').forEach(b=>b.onclick=e=>{
-    const i=+e.currentTarget.dataset.i; db.assets[i].closed=!db.assets[i].closed; save(); render();
+    const i=+e.currentTarget.dataset.i;
+    db.assets[i].closed = !db.assets[i].closed;
+    save(); render();
   });
   wrap.querySelectorAll('button[data-act="del"]').forEach(b=>b.onclick=e=>{
-    const i=+e.currentTarget.dataset.i; db.assets.splice(i,1); save(); render();
+    const i=+e.currentTarget.dataset.i;
+    db.assets.splice(i,1);
+    save(); render();
   });
 }
 
-// ---------- Add/Replace ----------
+// ---------- Add / Replace (tap-test style) ----------
 function addReplace(){
-  const name=$('#ticker').value.trim();
-  const rungs=parseInt($('#rungs').value,10);
+  // visual confirmation this handler always runs
+  alert('Added'); 
+  setPill('saved');
+
+  const name=($('#ticker').value||'').trim();
+  const rungs=parseInt($('#rungs').value,10)||3;
   const start=parseFloat($('#startPrice').value);
   const shares=parseInt($('#defaultShares').value,10)||1;
-  if(!name){ alert('Please enter a Ticker / Name'); return; }
-  if(!isFinite(start)){ alert('Please enter a valid Start Price'); return; }
-  if(!isFinite(rungs) || rungs<1 || rungs>4){ alert('Rungs must be 1–4'); return; }
 
+  if(!name){ alert('Enter a Ticker / Name'); return; }
+  if(!isFinite(start)){ alert('Enter a valid Start Price'); return; }
+  if(rungs<1 || rungs>4){ alert('Rungs must be 1–4'); return; }
+
+  // Build all rungs
   let html='';
-  for(let i=1;i<=rungs;i++){ html += rungTable(buildRows(start, i-1, shares), i); }
-  const rec={name, rungs, start, shares, html, closed:false};
-  const ix=db.assets.findIndex(a=>a.name.toLowerCase()===name.toLowerCase());
-  if(ix>=0) db.assets[ix]=rec; else db.assets.push(rec);
-  save(); render(); cueSaved();
-  // Reset only ticker, keep other fields for faster entry
+  for(let i=1;i<=rungs;i++){
+    html += rungHTML(buildRows(start, i-1, shares), i);
+  }
+
+  // Insert / replace
+  const rec = { name, rungs, start, shares, html, closed:false };
+  const ix = db.assets.findIndex(a => a.name.toLowerCase() === name.toLowerCase());
+  if(ix>=0) db.assets[ix] = rec; else db.assets.push(rec);
+  save(); render();
+
+  // clear ticker only; keep other inputs
   $('#ticker').value='';
 }
 
-// ---------- CSV / Backups ----------
+// ---------- Backups / CSV ----------
 $('#saveBtn').onclick=()=>{
   const blob=new Blob([JSON.stringify(db,null,2)], {type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='ladder_backup.json'; a.click();
@@ -212,22 +209,16 @@ $('#saveBtn').onclick=()=>{
 $('#restoreBtn').onclick=()=>{
   const inp=document.createElement('input'); inp.type='file'; inp.accept='.json,application/json';
   inp.onchange=e=>{ const f=e.target.files[0]; if(!f) return;
-    const r=new FileReader(); r.onload=()=>{ try{ db=JSON.parse(r.result); save(); render(); cueSaved(); }catch{ alert('Invalid JSON'); } };
+    const r=new FileReader(); r.onload=()=>{ try{ db=JSON.parse(r.result); save(); render(); setPill('restored'); }catch{ alert('Invalid JSON'); } };
     r.readAsText(f);
   }; inp.click();
 };
 $('#csvBtn').onclick=()=>{
-  const rows=[];
-  db.assets.forEach(a=>{
-    rows.push(['Asset',a.name,'Rungs',a.rungs,'Start',a.start].join(','));
-  });
+  const rows=[]; db.assets.forEach(a=>{ rows.push(['Asset',a.name,'Rungs',a.rungs,'Start',a.start].join(',')); });
   const blob=new Blob([rows.join('\n')], {type:'text/csv'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='ladder_export.csv'; a.click();
 };
 $('#clearBtn').onclick=()=>{ if(confirm('Clear all ladders on this device?')){ db={assets:[]}; save(); render(); } };
-
-// Wire the add button (Safari-safe)
-$('#addBtn').addEventListener('click', addReplace);
 
 // Initial draw
 render();
