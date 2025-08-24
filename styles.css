@@ -1,32 +1,24 @@
-*{box-sizing:border-box}html,body{margin:0;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#f6f7f9;color:#111}
-.topbar{display:flex;align-items:center;padding:10px 14px;background:linear-gradient(90deg,#0b8f5a,#0aa269);color:#fff;gap:10px}
-.topbar .logo{width:22px;height:22px}
-.topbar h1{font-size:18px;margin:0}
-.pill{margin-left:auto;background:#1dbf73;color:#033;padding:4px 10px;border-radius:999px;font-size:12px}
-.container{max-width:900px;margin:16px auto;padding:0 12px}
-.panel{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-bottom:16px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
-.panel-title{margin:0 0 10px 0;font-size:18px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-label{display:flex;flex-direction:column;font-weight:600;font-size:13px;color:#333}
-input,select{margin-top:6px;border:1px solid #cfd6de;border-radius:8px;padding:10px 12px;font-size:16px;background:#fff;width:100%}
-input[type=number]{-moz-appearance:textfield}
-input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-.btn-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
-.btn{border:1px solid #cfd6de;background:#fff;border-radius:999px;padding:10px 14px;font-weight:600}
-.btn.primary{background:#14a05a;color:#fff;border-color:#149a57}
-.btn.danger{background:#dc3545;color:#fff;border-color:#c9303b}
-.asset{background:#fff;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:16px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
-.asset-header{display:flex;align-items:center;gap:10px;padding:12px;border-bottom:1px solid #eef1f5}
-.asset-title{font-weight:700}
-.badge{background:#eef4ff;color:#2d4ea1;padding:4px 8px;border-radius:999px;font-size:12px}
-.asset-controls{margin-left:auto;display:flex;gap:8px}
-table{width:100%;border-collapse:separate;border-spacing:0 8px}
-th,td{padding:8px 10px;text-align:left}
-th{font-size:12px;color:#334}
-tr{background:#fcfcfd;border:1px solid #eef1f5}
-td:first-child,th:first-child{width:42px}
-.cell input{width:100%;padding:10px 12px;border:1px solid #cfd6de;border-radius:8px;font-size:16px}
-.small{font-size:13px;color:#666}
-.hidden{display:none}
-.note{font-size:13px;color:#444;background:#fff2c6;border:1px solid #ffe38b;padding:10px;border-radius:8px;margin-top:12px}
-@media (max-width:640px){.grid{grid-template-columns:1fr}}
+
+*{box-sizing:border-box}html,body{margin:0;padding:0;background:#f6fafb;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+.topbar{display:flex;align-items:center;gap:.5rem;padding:.6rem 1rem;background:linear-gradient(180deg,#0ea5e9,#0ea56e)}
+.logo{width:22px;height:22px;filter:drop-shadow(0 1px 0 rgba(0,0,0,.2))}
+.topbar h1{color:#fff;margin:0;font-size:1.1rem;font-weight:700}
+.pill{margin-left:auto;background:#10b981;color:#fff;padding:.2rem .6rem;border-radius:999px;font-size:.8rem}
+.wrap{padding:12px;max-width:900px;margin:0 auto}
+.panel{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-bottom:12px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.panel h2{margin:.2rem 0 .6rem 0}
+label{display:block;margin:.4rem 0;color:#374151;font-size:.92rem}
+input{width:100%;padding:.6rem .7rem;border:1px solid #cdd6df;border-radius:10px;font-size:1rem}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+button{appearance:none;border:0;border-radius:10px;background:#10b981;color:#fff;padding:.6rem .9rem;font-weight:700}
+button.danger,.row.danger button{background:#ef4444}
+.hint{font-size:.85rem;color:#6b7280;margin:.5rem 0;background:#fff8db;padding:.5rem;border-radius:8px}
+.asset{background:#fff;border:1px solid #e5e7eb;border-radius:12px;margin:12px 0;overflow:hidden}
+.asset .head{display:flex;align-items:center;gap:8px;padding:10px;background:#f3f4f6}
+.asset .title{font-weight:800}
+.asset .tag{background:#e5edff;border:1px solid #c7dafc;padding:2px 8px;border-radius:999px;font-size:.8rem}
+.asset .btns{margin-left:auto;display:flex;gap:8px}
+.tbl{width:100%;border-collapse:separate;border-spacing:0 8px}
+.tbl th,.tbl td{padding:6px 8px;text-align:left}
+.tbl input{width:100%;padding:.45rem .6rem;border-radius:10px}
+.foot{padding:14px;text-align:center;color:#6b7280;font-size:.85rem}
