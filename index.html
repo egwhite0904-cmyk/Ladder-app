@@ -2,373 +2,492 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ladder App</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' ry='10' fill='%2307a37e'/%3E%3Cg stroke='%23fff' stroke-width='4' stroke-linecap='round'%3E%3Cline x1='22' y1='10' x2='22' y2='54'/%3E%3Cline x1='42' y1='10' x2='42' y2='54'/%3E%3Cline x1='22' y1='16' x2='42' y2='16'/%3E%3Cline x1='22' y1='26' x2='42' y2='26'/%3E%3Cline x1='22' y1='36' x2='42' y2='36'/%3E%3Cline x1='22' y1='46' x2='42' y2='46'/%3E%3C/g%3E%3C/svg%3E">
+<meta name="theme-color" content="#0a7">
+<link rel="icon" href="assets/ladder.svg">
 <style>
-:root{--brand:#07a37e;--text:#111;--muted:#666;--bg:#f6f7f8;--card:#fff;--accent:#0a7;--danger:#d33}
+:root{
+  --brand:#0a7;--fg:#111;--bg:#f7f7f7;--panel:#fff;--muted:#667;--danger:#c33;--ok:#179e57;
+}
 *{box-sizing:border-box}
-body{margin:0;font:16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial; color:var(--text); background:var(--bg)}
-header{position:sticky;top:0;background:var(--brand);color:#fff;padding:12px 16px;z-index:10}
-header .row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-h1{font-size:20px;margin:0;display:flex;align-items:center;gap:8px}
-nav{margin-left:auto;display:flex;gap:8px}
-nav button{padding:8px 14px;border:0;border-radius:8px;background:#fff;color:var(--brand);font-weight:600}
-nav button.active{background:#004d3f;color:#fff}
-main{padding:16px;display:grid;gap:16px;max-width:1100px;margin:0 auto}
-.card{background:var(--card);border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.05);padding:16px}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.35 -apple-system,system-ui,Segoe UI,Roboto,Arial;}
+header{position:sticky;top:0;z-index:10;background:var(--brand);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:12px}
+header img{width:28px;height:28px}
+header h1{font-size:20px;margin:0;flex:1}
+.tabs{display:flex;gap:10px}
+.tabs button{border:0;background:#fff;color:#000;padding:8px 14px;border-radius:12px;font-weight:600}
+.tabs button[aria-pressed="true"]{background:#d6f5e8}
+main{padding:14px}
+.card{background:var(--panel);border-radius:12px;padding:14px;margin:12px 0;border:1px solid #e6e6e6}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.controls{display:flex;flex-wrap:wrap;gap:10px}
+button,.btn{cursor:pointer;border:0;border-radius:10px;padding:10px 14px;font-weight:700}
+button.primary{background:var(--brand);color:#fff}
+button.gray{background:#efefef}
+button.danger{background:var(--danger);color:#fff}
+.badge{background:#eef;color:#246;padding:4px 8px;border-radius:999px;font-size:12px;margin-left:8px}
 small.muted{color:var(--muted)}
-label{display:block;font-weight:600;margin:8px 0 6px}
-input,select,button,.btn{font-size:16px}
-input,select{width:100%;padding:10px;border:1px solid #d7d7d7;border-radius:10px;background:#fff}
-.controls{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-@media(min-width:700px){.controls{grid-template-columns:repeat(4,1fr)}}
-button,.btn{cursor:pointer;border:0;border-radius:10px;padding:12px 14px;font-weight:700}
-.btn-primary{background:var(--accent);color:#fff}
-.btn-danger{background:var(--danger);color:#fff}
-.btn-secondary{background:#eee}
-.asset{margin-top:8px}
-.asset h3{margin:6px 0 12px}
-.badge{display:inline-block;background:#eef7f5;color:#056; border:1px solid #cde; padding:4px 10px;border-radius:999px;margin-left:6px;font-size:12px}
-.tablewrap{overflow:auto;border:1px solid #e5e5e5;border-radius:12px}
-table{border-collapse:separate;border-spacing:0;width:100%}
-th,td{padding:10px 8px;border-bottom:1px solid #eee;background:#fff}
-th{position:sticky;top:0;background:#f8faf9;z-index:1}
-td input{width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;background:#fff;font-variant-numeric:tabular-nums}
-td input[type="date"]{min-width:140px}
-td.num,th.num{text-align:right}
-.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:12px}
-.kpi{background:#f0faf6;border:1px solid #cfe; padding:10px;border-radius:10px;text-align:center}
-footer{padding:18px 0 40px;color:#888;text-align:center}
+table{width:100%;border-collapse:separate;border-spacing:0 8px}
+th,td{padding:8px}
+th{font-size:13px;color:#333;text-align:left}
+td{background:#fff;border:1px solid #eee}
+td:first-child{border-radius:10px 0 0 10px}
+td:last-child{border-radius:0 10px 10px 0}
+input[type="text"],input[type="number"],input[type="date"],select{
+  width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:10px;background:#fff;font-size:16px;
+}
+/* amounts readable on phone */
+.amount input{width:130px}
+.qty input{width:90px}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.summary{display:flex;gap:14px;flex-wrap:wrap}
+summary-card{display:inline-block}
+.kpi{background:#fff;border:1px solid #eee;border-radius:10px;padding:10px 12px;min-width:120px}
+.kpi .val{font-weight:800;font-size:18px}
+hr.sep{border:0;border-top:1px dashed #ddd;margin:10px 0}
+.notice{background:#fffaf0;border:1px dashed #f2c27d;padding:10px 12px;border-radius:10px;color:#5a4b2e}
+.footer{padding:30px 0 60px}
 </style>
 </head>
 <body>
 <header>
-  <div class="row">
-    <h1>🪜 Ladder App</h1>
-    <div id="saveFlag" class="badge">ready</div>
-    <nav>
-      <button id="tabLadders" class="active">Ladders</button>
-      <button id="tabCharts">Charts</button>
-    </nav>
+  <img src="assets/ladder.svg" alt="Ladder">
+  <h1>Ladder App</h1>
+  <div class="tabs">
+    <button id="tabLadders" aria-pressed="true">Ladders</button>
+    <button id="tabCharts" aria-pressed="false">Charts</button>
   </div>
 </header>
-
 <main>
-  <section id="pageLadders" class="card">
-    <h2 style="margin:0 0 10px">Add / Replace Asset</h2>
-    <div class="controls">
-      <div><label>Ticker / Name</label><input id="ticker" placeholder="e.g., RIOT or COIN"></div>
-      <div><label>Rungs</label>
-        <select id="rungs">
-          <option value="2">2 rungs</option>
-          <option value="3" selected>3 rungs</option>
-          <option value="4">4 rungs</option>
-        </select>
+  <section id="viewLadders">
+    <div class="card">
+      <h2>Add / Replace Asset</h2>
+      <div class="row">
+        <div>
+          <label>Ticker / Name</label>
+          <input id="inTicker" placeholder="e.g., RIOT or COIN">
+        </div>
+        <div>
+          <label>Rungs</label>
+          <select id="inRungs">
+            <option value="2">2 rungs</option>
+            <option value="3" selected>3 rungs</option>
+            <option value="4">4 rungs</option>
+          </select>
+        </div>
+        <div>
+          <label>Start Price</label>
+          <input id="inStartPrice" type="number" inputmode="decimal" step="0.01" placeholder="current price">
+        </div>
+        <div>
+          <label>Default Shares per row</label>
+          <input id="inDefShares" type="number" inputmode="decimal" step="1" value="1">
+        </div>
       </div>
-      <div><label>Start Price</label><input id="startPrice" type="number" step="0.01" placeholder="current price"></div>
-      <div><label>Default Shares / row</label><input id="defaultShares" type="number" step="1" value="1"></div>
+      <div class="notice" style="margin-top:10px">
+        <b>Presets (locked)</b>: Sell +2.5%, +4.5%, +7%, +10% (first 2–4 based on selection). 
+        Buyback 1%, 2.5%, 3.5%, 5% (rungs 1–4). 20 cycles.
+        <b>Row&nbsp;1 Planned Buy equals Start Price</b>; then each next row uses: 
+        <code>nextBuy = prevSell × (1 − buyback%)</code> and <code>sell = buy × (1 + sell%)</code>.
+      </div>
+      <div class="actions" style="margin-top:10px">
+        <button id="btnAddReplace" class="primary">+ Add / Replace Asset</button>
+        <button id="btnSaveJSON" class="gray">Save Backup (JSON)</button>
+        <button id="btnLoadJSON" class="gray">Restore Backup (JSON)</button>
+        <button id="btnExportAll" class="gray">Export CSV (Excel)</button>
+        <button id="btnClearAll" class="danger">Clear All (this device)</button>
+      </div>
     </div>
-    <div class="card" style="background:#fff7e8;border:1px solid #ffd8a8;margin-top:12px">
-      <b>Presets (locked):</b> Sell +2.5%, +4.5%, +7%, +10% (first 2–4 based on selection). 
-      Buyback 1%, 2.5%, 3.5%, 5% (rungs 1–4). 20 cycles.
-      Row 1 Planned Buy equals Start Price; each next row uses: 
-      <code>nextBuy = prevSell × (1 − buyback%)</code> and <code>sell = buy × (1 + sell%)</code>.
+
+    <div class="card">
+      <div class="summary">
+        <div class="kpi"><div>Realized P/L (closed)</div><div class="val" id="kpiRealized">$0.00</div></div>
+        <div class="kpi"><div># of Assets</div><div class="val" id="kpiAssets">0</div></div>
+        <div class="kpi"><div>Open Rows</div><div class="val" id="kpiOpen">0</div></div>
+        <div class="kpi"><div>Closed Rows</div><div class="val" id="kpiClosed">0</div></div>
+      </div>
     </div>
-    <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
-      <button id="addAssetBtn" class="btn-primary">+ Add / Replace Asset</button>
-      <button id="saveJson" class="btn-secondary">Save Backup (JSON)</button>
-      <button id="loadJson" class="btn-secondary">Restore Backup (JSON)</button>
-      <button id="clearAll" class="btn-danger">Clear All (this device)</button>
-    </div>
+
+    <div id="assetsWrap"></div>
+    <div class="footer"></div>
   </section>
 
-  <section id="assets"></section>
-
-  <section id="pageCharts" class="card" style="display:none">
-    <h2 style="margin-top:0">Totals & Chart</h2>
-    <div class="kpis">
-      <div class="kpi"><div style="font-size:13px;color:#456">Portfolio Total (realized)</div><div id="pfTotal" style="font-weight:800;font-size:20px">$0.00</div></div>
-      <div class="kpi"><div style="font-size:13px;color:#456"># of Assets</div><div id="pfAssets" style="font-weight:800;font-size:20px">0</div></div>
-    </div>
-    <div class="card" style="border:1px solid #e5e5e5">
-      <canvas id="barChart" height="120"></canvas>
+  <section id="viewCharts" style="display:none">
+    <div class="card">
+      <h2>Totals & Charts</h2>
+      <p class="notice">Chart is based on rows that have a <b>Sell Date</b> entered. Each row's realized P/L is 
+      <code>(plannedSell − plannedBuy) × qty</code> on that date.</p>
+      <div class="row">
+        <div>
+          <label>From</label>
+          <input type="date" id="fromDate">
+        </div>
+        <div>
+          <label>To</label>
+          <input type="date" id="toDate">
+        </div>
+      </div>
+      <div class="actions" style="margin-top:10px">
+        <button id="btnUpdateChart" class="primary">Update Chart</button>
+      </div>
+      <h3 id="totalsLine" style="margin-top:12px">Total: $0.00</h3>
+      <canvas id="plChart" height="200"></canvas>
     </div>
   </section>
 </main>
 
-<footer>v2.3.2 • data auto-saves on this device</footer>
+<!-- Template for each asset block -->
+<template id="assetTemplate">
+  <div class="card asset">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <h3 style="margin:0"><span data-ticker>—</span></h3>
+      <span class="badge" data-rungs></span>
+      <span class="badge" data-start></span>
+      <span class="badge" data-realized="$0.00"></span>
+    </div>
+    <div class="actions" style="margin-top:8px">
+      <button class="primary" data-act="build">Build Ladder</button>
+      <button class="gray" data-act="csv">Export CSV</button>
+      <button class="danger" data-act="delete">Delete Ladder</button>
+    </div>
+    <div class="notice" style="margin-top:10px">Rungs use locked defaults: Sell +2.5%, +4.5%, +7%, +10% • Buyback 1%, 2.5%, 3.5%, 5% • 20 cycles. Edit any cell inline.</div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- 4 rung tables; show as needed -->
+    <div data-rung style="display:none;margin-top:12px">
+      <h4 style="margin:4px 0">Rung 1 <span class="badge">Sell +2.5% • Buyback 1%</span></h4>
+      <div class="tableWrap">
+        <table>
+          <thead><tr>
+            <th style="width:40px">#</th>
+            <th class="amount">Planned Buy</th>
+            <th class="amount">Planned Sell</th>
+            <th>Profit/Share</th>
+            <th class="qty">Planned Shares</th>
+            <th>Planned Total</th>
+            <th>Buy Date</th>
+            <th>Sell Date</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <div data-rung style="display:none;margin-top:12px">
+      <h4 style="margin:4px 0">Rung 2 <span class="badge">Sell +4.5% • Buyback 2.5%</span></h4>
+      <div class="tableWrap">
+        <table>
+          <thead><tr>
+            <th style="width:40px">#</th>
+            <th class="amount">Planned Buy</th>
+            <th class="amount">Planned Sell</th>
+            <th>Profit/Share</th>
+            <th class="qty">Planned Shares</th>
+            <th>Planned Total</th>
+            <th>Buy Date</th>
+            <th>Sell Date</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <div data-rung style="display:none;margin-top:12px">
+      <h4 style="margin:4px 0">Rung 3 <span class="badge">Sell +7% • Buyback 3.5%</span></h4>
+      <div class="tableWrap">
+        <table>
+          <thead><tr>
+            <th style="width:40px">#</th>
+            <th class="amount">Planned Buy</th>
+            <th class="amount">Planned Sell</th>
+            <th>Profit/Share</th>
+            <th class="qty">Planned Shares</th>
+            <th>Planned Total</th>
+            <th>Buy Date</th>
+            <th>Sell Date</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <div data-rung style="display:none;margin-top:12px">
+      <h4 style="margin:4px 0">Rung 4 <span class="badge">Sell +10% • Buyback 5%</span></h4>
+      <div class="tableWrap">
+        <table>
+          <thead><tr>
+            <th style="width:40px">#</th>
+            <th class="amount">Planned Buy</th>
+            <th class="amount">Planned Sell</th>
+            <th>Profit/Share</th>
+            <th class="qty">Planned Shares</th>
+            <th>Planned Total</th>
+            <th>Buy Date</th>
+            <th>Sell Date</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-const STORAGE_KEY = "ladderApp_v232";
-const SELL_PRESETS = [0.025, 0.045, 0.07, 0.10];
-const BUYBACKS = [0.01, 0.025, 0.035, 0.05];
+// === LOGIC START ===
+
+// presets
+const SELL_PRESETS   = [0.025, 0.045, 0.07, 0.10];
+const BUYBACK_PRESETS= [0.01,  0.025, 0.035, 0.05];
 const CYCLES = 20;
+const LS_ASSETS_KEY = 'ladder_assets_v3';
+const round2=n=>Math.round(n*100)/100;
+const fmt=n => isNaN(n)?'':round2(n).toFixed(2);
 
-const $ = sel => document.querySelector(sel);
-const fmt = n => isFinite(n) ? (n>=100 ? n.toFixed(2) : n.toFixed(2)) : "";
-const currency = n => isFinite(n) ? "$" + fmt(n) : "";
-const saveFlag = $("#saveFlag");
+// storage helpers
+function loadAssets(){try{return JSON.parse(localStorage.getItem(LS_ASSETS_KEY))||[]}catch{return []}}
+function saveAssets(list){localStorage.setItem(LS_ASSETS_KEY, JSON.stringify(list))}
 
-let state = loadState();
+// build rows for a rung
+function buildRows(startPrice, sellPct, buybackPct, cycles=CYCLES){
+  const rows=[]; let buy=+startPrice;
+  for(let i=1;i<=cycles;i++){
+    const sell=round2(buy*(1+sellPct));
+    const profit=round2(sell-buy);
+    rows.push({cycle:i, plannedBuy:buy, plannedSell:sell, profitPerShare:profit});
+    buy=round2(sell*(1-buybackPct));
+  }
+  return rows;
+}
 
-// Tabs
-$("#tabLadders").onclick = () => { $("#tabLadders").classList.add("active"); $("#tabCharts").classList.remove("active"); $("#pageLadders").style.display=""; $("#assets").style.display=""; $("#pageCharts").style.display="none"; };
-$("#tabCharts").onclick = () => { $("#tabCharts").classList.add("active"); $("#tabLadders").classList.remove("active"); $("#pageLadders").style.display="none"; $("#assets").style.display="none"; $("#pageCharts").style.display=""; drawChart(); };
+// upsert asset
+function upsertAsset({ticker,startPrice,rungs,defShares}){
+  const list=loadAssets();
+  const i=list.findIndex(a=>a.ticker.toLowerCase()==ticker.toLowerCase());
+  const rec={ticker,startPrice:+startPrice,rungs:+rungs,defShares:+defShares,edits:list[i]?.edits||{}};
+  if(i>=0) list[i]=rec; else list.push(rec);
+  saveAssets(list);
+  return rec;
+}
 
-// Form buttons
-$("#addAssetBtn").onclick = () => {
-  const t = $("#ticker").value.trim();
-  const r = parseInt($("#rungs").value,10);
-  const sp = parseFloat($("#startPrice").value);
-  const defQty = parseInt($("#defaultShares").value||"1",10);
+// render rung rows into a table (tbody)
+function renderRows(tbody, rows, editsForRung, defShares, assetKey, rungIdx){
+  tbody.innerHTML='';
+  for(let r=0;r<rows.length;r++){
+    const row=rows[r];
+    const ed=(editsForRung && editsForRung[r+1])||{}; // keyed by 1-based index
+    const qty=ed.qty ?? defShares;
+    const buyDate=ed.buyDate || '';
+    const sellDate=ed.sellDate || '';
+    const plannedTotal=round2(row.profitPerShare*(+qty||0));
 
-  if(!t || !isFinite(sp)) { alert("Enter ticker and a valid start price."); return; }
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td style="width:40px;text-align:center">${row.cycle}</td>
+      <td class="amount"><input data-asset="${assetKey}" data-rung="${rungIdx}" data-row="${row.cycle}" data-field="buy" type="number" step="0.01" value="${fmt(row.plannedBuy)}"></td>
+      <td class="amount"><input data-asset="${assetKey}" data-rung="${rungIdx}" data-row="${row.cycle}" data-field="sell" type="number" step="0.01" value="${fmt(row.plannedSell)}"></td>
+      <td>$${fmt(row.profitPerShare)}</td>
+      <td class="qty"><input data-asset="${assetKey}" data-rung="${rungIdx}" data-row="${row.cycle}" data-field="qty" type="number" step="1" value="${qty}"></td>
+      <td>$${fmt(plannedTotal)}</td>
+      <td><input data-asset="${assetKey}" data-rung="${rungIdx}" data-row="${row.cycle}" data-field="buyDate" type="date" value="${buyDate}"></td>
+      <td><input data-asset="${assetKey}" data-rung="${rungIdx}" data-row="${row.cycle}" data-field="sellDate" type="date" value="${sellDate}"></td>
+    `;
+    tbody.appendChild(tr);
+  }
+}
 
-  const asset = buildAsset(t.toUpperCase(), sp, r, defQty);
-  const idx = state.assets.findIndex(a => a.ticker === asset.ticker);
-  if (idx >= 0) state.assets[idx] = asset; else state.assets.push(asset);
-  persist();
-  renderAssets();
-  // jump to asset just added
-  setTimeout(()=>{
-    const card = document.getElementById("asset-"+asset.ticker);
-    if(card) card.scrollIntoView({behavior:"smooth",block:"start"});
-  },0);
-};
+// compute aggregate KPIs + per-asset realized total
+function computeKPIs(){
+  const list=loadAssets();
+  let open=0, closed=0, realized=0;
+  list.forEach(a=>{
+    for(let r=0;r<a.rungs;r++){
+      const rows=buildRows(a.startPrice, SELL_PRESETS[r], BUYBACK_PRESETS[r], CYCLES);
+      const edits=a.edits?.[r] || {}; // we store by 0-based rung
+      rows.forEach(row=>{
+        const e=edits[row.cycle]||{};
+        const qty=+(e.qty ?? a.defShares);
+        const isClosed = !!e.sellDate;
+        if(isClosed){closed++; realized += (row.plannedSell-row.plannedBuy) * (qty||0);}
+        else open++;
+      });
+    }
+  });
+  document.getElementById('kpiAssets').textContent = String(list.length);
+  document.getElementById('kpiOpen').textContent   = String(open);
+  document.getElementById('kpiClosed').textContent = String(closed);
+  document.getElementById('kpiRealized').textContent = '$'+fmt(realized);
+}
 
-$("#saveJson").onclick = () => {
-  const blob = new Blob([JSON.stringify(state,null,2)], {type:"application/json"});
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "ladder_backup.json";
+// rebuild all assets UI
+function rebuildAll(){
+  const wrap=document.getElementById('assetsWrap');
+  wrap.innerHTML='';
+  const list=loadAssets();
+  list.forEach((asset, aidx)=>{
+    const {ticker,startPrice,rungs,defShares}=asset;
+    const frag=document.getElementById('assetTemplate').content.cloneNode(true);
+    const card=frag.querySelector('.asset');
+    frag.querySelector('[data-ticker]').textContent=ticker;
+    frag.querySelector('[data-start]').textContent='$'+fmt(startPrice);
+    frag.querySelector('[data-rungs]').textContent=`${rungs} rung(s)`;
+    const rungDivs=frag.querySelectorAll('[data-rung]');
+
+    // actions
+    frag.querySelector('[data-act="delete"]').addEventListener('click', ()=>{
+      const list=loadAssets().filter(a=>a.ticker!==ticker);
+      saveAssets(list); rebuildAll();
+    });
+    frag.querySelector('[data-act="csv"]').addEventListener('click', ()=>exportCSV([asset]));
+    frag.querySelector('[data-act="build"]').addEventListener('click', ()=>{
+      // just recompute & rerender
+      rebuildAll();
+    });
+
+    for(let r=0;r<rungs && r<4;r++){
+      const d=rungDivs[r]; d.style.display='';
+      const rows=buildRows(startPrice, SELL_PRESETS[r], BUYBACK_PRESETS[r], CYCLES);
+      const tbody=d.querySelector('tbody');
+      renderRows(tbody, rows, asset.edits?.[r], defShares, ticker, r);
+    }
+
+    wrap.appendChild(frag);
+  });
+
+  computeKPIs();
+}
+
+// save inline edits (qty/dates); keep planned buy/sell read-only calc but if user edits, we persist too
+document.addEventListener('input', (ev)=>{
+  const el=ev.target;
+  if(!el.dataset || !el.dataset.asset) return;
+  const assetKey=el.dataset.asset;
+  const rung=+el.dataset.rung;
+  const row=+el.dataset.row;
+  const field=el.dataset.field;
+  const val=el.value;
+
+  const list=loadAssets();
+  const a = list.find(x => x.ticker===assetKey);
+  if(!a) return;
+  a.edits = a.edits || {};
+  a.edits[rung] = a.edits[rung] || {};
+  a.edits[rung][row] = a.edits[rung][row] || {};
+  a.edits[rung][row][field] = val;
+  saveAssets(list);
+  computeKPIs();
+});
+
+// export CSV for all or subset
+function exportCSV(subset){
+  const list = subset || loadAssets();
+  const rows=[['Ticker','Rung','Row','#','Planned Buy','Planned Sell','Profit/Share','Qty','Planned Total','Buy Date','Sell Date']];
+  list.forEach(a=>{
+    for(let r=0;r<a.rungs;r++){
+      const calc = buildRows(a.startPrice, SELL_PRESETS[r], BUYBACK_PRESETS[r], CYCLES);
+      const edits=a.edits?.[r]||{};
+      calc.forEach(rec=>{
+        const e=edits[rec.cycle]||{};
+        const qty=+(e.qty ?? a.defShares);
+        const total=round2(rec.profitPerShare*(qty||0));
+        rows.push([a.ticker, r+1, rec.cycle, rec.cycle, fmt(rec.plannedBuy), fmt(rec.plannedSell), fmt(rec.profitPerShare), qty, fmt(total), e.buyDate||'', e.sellDate||'']);
+      });
+    }
+  });
+  const csv = rows.map(r=>r.join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='ladder_export.csv';
   a.click();
-};
+}
 
-$("#loadJson").onclick = async () => {
-  const inp = document.createElement("input");
-  inp.type = "file"; inp.accept = ".json,application/json";
-  inp.onchange = async () => {
-    const f = inp.files[0]; if(!f) return;
-    const text = await f.text();
-    try { const obj = JSON.parse(text); if(obj && obj.assets) { state = obj; persist(); renderAssets(); alert("Backup restored."); } }
-    catch(e){ alert("Invalid JSON."); }
+// backup/restore
+document.getElementById('btnSaveJSON').addEventListener('click', ()=>{
+  const data = JSON.stringify(loadAssets());
+  const a=document.createElement('a');
+  a.href='data:application/json,'+encodeURIComponent(data);
+  a.download='ladder_backup.json';
+  a.click();
+});
+document.getElementById('btnLoadJSON').addEventListener('click', async ()=>{
+  const inp=document.createElement('input');
+  inp.type='file'; inp.accept='.json,application/json';
+  inp.onchange=()=>{
+    const f=inp.files[0]; if(!f) return;
+    const rd=new FileReader();
+    rd.onload=()=>{ try{ saveAssets(JSON.parse(rd.result)); rebuildAll(); }catch(e){ alert('Invalid JSON'); } };
+    rd.readAsText(f);
   };
   inp.click();
-};
+});
+document.getElementById('btnExportAll').addEventListener('click', ()=>exportCSV());
+document.getElementById('btnClearAll').addEventListener('click', ()=>{
+  if(confirm('Clear all data on this device?')){ localStorage.removeItem(LS_ASSETS_KEY); rebuildAll(); }
+});
 
-$("#clearAll").onclick = () => {
-  if(confirm("Clear all ladders saved on this device?")) {
-    state = { assets: [] };
-    persist();
-    renderAssets();
-  }
-};
+// tabs
+const tabL = document.getElementById('tabLadders');
+const tabC = document.getElementById('tabCharts');
+tabL.addEventListener('click', ()=>{ tabL.setAttribute('aria-pressed','true'); tabC.setAttribute('aria-pressed','false'); document.getElementById('viewLadders').style.display=''; document.getElementById('viewCharts').style.display='none'; });
+tabC.addEventListener('click', ()=>{ tabC.setAttribute('aria-pressed','true'); tabL.setAttribute('aria-pressed','false'); document.getElementById('viewCharts').style.display=''; document.getElementById('viewLadders').style.display='none'; buildChart(); });
 
-function loadState(){
-  try { const raw = localStorage.getItem(STORAGE_KEY); if(raw) return JSON.parse(raw); } catch(e){}
-  return { assets: [] };
-}
-function persist(){
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  const now = new Date();
-  saveFlag.textContent = "saved • " + now.toLocaleTimeString();
-}
-function buildAsset(ticker, startPrice, rungs, defQty){
-  const rungPerc = SELL_PRESETS.slice(0, rungs);
-  const buybacks = BUYBACKS.slice(0, rungs);
-  const ladders = [];
-  for(let r=0;r<rungs;r++){
-    const sellPct = rungPerc[r];
-    const buyback = buybacks[r];
-    const rows = [];
-    // --- FIX: include row 1 with start price ---
-    let buy = startPrice;                 // row 1 buy = start price
-    let sell = buy * (1 + sellPct);       // row 1 sell
-    for(let i=1;i<=CYCLES;i++){
-      rows.push({
-        i, buy:+buy.toFixed(2), sell:+sell.toFixed(2),
-        profitPerShare:+(sell - buy).toFixed(2),
-        plannedQty: defQty, plannedTotal: +((sell - buy)*defQty).toFixed(2),
-        buyDate:"", sellDate:"", actualBuy:"", actualSell:"", qty:"",
-        realized:0, delta:0, cum:0
-      });
-      // next row inputs
-      buy = sell * (1 - buyback);
-      sell = buy * (1 + sellPct);
-    }
-    ladders.push({ rung:r+1, sellPct, buyback, rows });
-  }
-  return { ticker, startPrice, rungs, defQty, ladders };
-}
-
-function renderAssets(){
-  const host = $("#assets");
-  host.innerHTML = "";
-  state.assets.forEach(asset => host.appendChild(renderAsset(asset)));
-  drawChart();
-}
-
-function renderAsset(asset){
-  const card = document.createElement("section");
-  card.className = "card asset";
-  card.id = "asset-"+asset.ticker;
-
-  const head = document.createElement("div");
-  head.style.display="flex"; head.style.gap="10px"; head.style.flexWrap="wrap"; head.style.justifyContent="space-between"; head.style.alignItems="center";
-  head.innerHTML = `<h3 style="margin:0">${asset.ticker} <span class="badge">${asset.rungs} rung(s)</span> <span class="badge">start ${currency(asset.startPrice)}</span></h3>`;
-  const btns = document.createElement("div");
-  btns.style.display="flex"; btns.style.gap="8px"; btns.innerHTML = `
-    <button class="btn-primary" title="Rebuild using locked %">Build Ladder</button>
-    <button class="btn-secondary" title="Download CSV for Excel">Export CSV</button>
-    <button class="btn-danger" title="Remove this ladder">Delete Ladder</button>
-  `;
-  head.appendChild(btns);
-  card.appendChild(head);
-
-  // footnote
-  const fn = document.createElement("div");
-  fn.className="small muted";
-  fn.style.margin="6px 0 10px";
-  fn.textContent = "Rungs use locked defaults: Sell +2.5%, +4.5%, +7%, +10% • Buyback 1%, 2.5%, 3.5%, 5% • 20 cycles. Edit any cell inline.";
-  card.appendChild(fn);
-
-  asset.ladders.forEach(lad=>{
-    const subtitle = document.createElement("div");
-    subtitle.style.margin="8px 4px";
-    subtitle.innerHTML = `<b>${asset.ticker} — Rung ${lad.rung}</b>  •  Sell +${(lad.sellPct*100).toFixed(1)}%  •  Buyback ${(lad.buyback*100).toFixed(1)}%`;
-    card.appendChild(subtitle);
-
-    const wrap = document.createElement("div");
-    wrap.className = "tablewrap";
-    const tbl = document.createElement("table");
-    tbl.innerHTML = `
-      <thead><tr>
-        <th style="width:44px">#</th>
-        <th class="num">Planned Buy</th>
-        <th class="num">Planned Sell</th>
-        <th class="num">Profit/Share</th>
-        <th class="num">Planned Shares</th>
-        <th class="num">Planned Total</th>
-        <th>Buy Date</th>
-        <th>Sell Date</th>
-        <th class="num">Actual Buy</th>
-        <th class="num">Actual Sell</th>
-        <th class="num">Filled Qty</th>
-        <th class="num">Realized P/L</th>
-        <th class="num">Δ vs Plan</th>
-        <th class="num">Cum Realized</th>
-      </tr></thead>
-      <tbody></tbody>`;
-    const tb = tbl.querySelector("tbody");
-
-    // compute cum
-    let cum=0;
-    lad.rows.forEach((row,idx)=>{
-      const tr = document.createElement("tr");
-      const realized = row.qty && row.actualBuy && row.actualSell ? (row.actualSell - row.actualBuy) * row.qty : 0;
-      const delta = realized - row.plannedTotal;
-      cum += realized;
-      tr.innerHTML = `
-        <td>${idx+1}</td>
-        <td class="num"><input inputmode="decimal" value="${fmt(row.buy)}"></td>
-        <td class="num"><input inputmode="decimal" value="${fmt(row.sell)}"></td>
-        <td class="num">${currency(row.profitPerShare)}</td>
-        <td class="num"><input inputmode="numeric" value="${row.plannedQty}"></td>
-        <td class="num">${currency(row.plannedTotal)}</td>
-        <td><input type="date" value="${row.buyDate||""}"></td>
-        <td><input type="date" value="${row.sellDate||""}"></td>
-        <td class="num"><input inputmode="decimal" value="${row.actualBuy||""}"></td>
-        <td class="num"><input inputmode="decimal" value="${row.actualSell||""}"></td>
-        <td class="num"><input inputmode="numeric" value="${row.qty||""}"></td>
-        <td class="num">${currency(realized)}</td>
-        <td class="num">${currency(delta)}</td>
-        <td class="num">${currency(cum)}</td>
-      `;
-      // change handlers -> update state and resave
-      const inputs = tr.querySelectorAll("input");
-      inputs.forEach((inp,ci)=>{
-        inp.onchange = () => {
-          // map by column
-          const map = ["buy","sell",null,"plannedQty",null,"buyDate","sellDate","actualBuy","actualSell","qty"];
-          // columns 0..9 correspond to inputs we rendered
-          const colMap = {0:"buy",1:"sell",2:"plannedQty",3:"buyDate",4:"sellDate",5:"actualBuy",6:"actualSell",7:"qty"};
-          // but we actually appended as: buy,sell,plannedQty,buyDate,sellDate,actualBuy,actualSell,qty
-          const arr = ["buy","sell","plannedQty","buyDate","sellDate","actualBuy","actualSell","qty"];
-          const key = arr[ci];
-          lad.rows[idx][key] = inp.type==="date" ? inp.value : (inp.value===""? "" : +(+inp.value).toFixed(2));
-          persist();
-          // re-render this asset to update calculated columns
-          const newIdx = state.assets.findIndex(a=>a.ticker===asset.ticker);
-          const fresh = state.assets[newIdx];
-          const section = document.getElementById("asset-"+asset.ticker);
-          section.replaceWith(renderAsset(fresh));
-        };
-      });
-      tb.appendChild(tr);
-    });
-    wrap.appendChild(tbl);
-    card.appendChild(wrap);
-  });
-
-  // Buttons
-  btns.children[0].onclick = ()=>{
-    const i = state.assets.findIndex(a=>a.ticker===asset.ticker);
-    state.assets[i] = buildAsset(asset.ticker, asset.startPrice, asset.rungs, asset.defQty);
-    persist(); renderAssets();
-  };
-  btns.children[1].onclick = ()=>{
-    // CSV
-    const lines = [];
-    lines.push(["Ticker","Rung","#","Planned Buy","Planned Sell","Profit/Share","Planned Shares","Planned Total","Buy Date","Sell Date","Actual Buy","Actual Sell","Filled Qty","Realized","Delta","Cum"].join(","));
-    asset.ladders.forEach(l=>{
-      let cum=0;
-      l.rows.forEach((r,idx)=>{
-        const realized = (r.qty && r.actualBuy && r.actualSell) ? (r.actualSell - r.actualBuy)*r.qty : 0;
-        cum += realized;
-        lines.push([asset.ticker,l.rung,idx+1,fmt(r.buy),fmt(r.sell),fmt(r.profitPerShare),r.plannedQty,fmt(r.plannedTotal),r.buyDate||"",r.sellDate||"",r.actualBuy||"",r.actualSell||"",r.qty||"",fmt(realized),fmt(realized - r.plannedTotal),fmt(cum)].join(","));
-      });
-    });
-    const blob = new Blob([lines.join("\n")],{type:"text/csv"});
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = asset.ticker+"_ladder.csv"; a.click();
-  };
-  btns.children[2].onclick = ()=>{
-    if(confirm("Delete this ladder?")){ state.assets = state.assets.filter(a=>a.ticker!==asset.ticker); persist(); renderAssets(); }
-  };
-
-  return card;
-}
-
-function drawChart(){
-  // aggregate realized by sell date across assets
-  const map = new Map();
-  let assetsCount = state.assets.length;
-  state.assets.forEach(a=>a.ladders.forEach(l=>l.rows.forEach(r=>{
-    if(r.sellDate && r.qty && r.actualBuy && r.actualSell){
-      const realized = (r.actualSell - r.actualBuy) * r.qty;
-      const k = r.sellDate;
-      map.set(k, (map.get(k)||0) + realized);
-    }
-  })));
-
-  const labels = Array.from(map.keys()).sort();
-  const values = labels.map(k=>map.get(k));
-
-  $("#pfAssets").textContent = assetsCount;
-  $("#pfTotal").textContent = currency(values.reduce((a,b)=>a+b,0));
-
-  const ctx = document.getElementById("barChart");
-  if(window.__chart){ window.__chart.destroy(); }
-  window.__chart = new Chart(ctx, {
-    type:'bar',
-    data:{labels, datasets:[{label:'Realized P/L', data:values}]},
-    options:{responsive:true,plugins:{legend:{display:true}},scales:{y:{beginAtZero:true}}}
+// Add/Replace Asset
+function wireForm(){
+  const btn=document.getElementById('btnAddReplace');
+  if(!btn || btn.dataset.wired) return;
+  btn.dataset.wired='1';
+  btn.addEventListener('click',(e)=>{
+    e.preventDefault();
+    const t=(document.getElementById('inTicker').value||'').trim();
+    const sp=parseFloat(document.getElementById('inStartPrice').value);
+    const rg=parseInt(document.getElementById('inRungs').value,10);
+    const ds=parseFloat(document.getElementById('inDefShares').value)||1;
+    if(!t || isNaN(sp)){ alert('Enter a ticker and a valid start price.'); return; }
+    upsertAsset({ticker:t,startPrice:sp,rungs:Math.min(Math.max(rg,2),4),defShares:ds});
+    rebuildAll();
   });
 }
+wireForm();
 
-// initial render
-renderAssets();
+// KPIs + initial render
+rebuildAll();
+
+// Chart building
+let chart;
+function buildChart(){
+  const list=loadAssets();
+  const from = document.getElementById('fromDate').value;
+  const to = document.getElementById('toDate').value;
+  const start = from ? new Date(from) : null;
+  const end   = to ? new Date(to)   : null;
+
+  // accumulate by YYYY-MM
+  const buckets = {};
+  list.forEach(a=>{
+    for(let r=0;r<a.rungs;r++){
+      const calc = buildRows(a.startPrice, SELL_PRESETS[r], BUYBACK_PRESETS[r], CYCLES);
+      const edits=a.edits?.[r]||{};
+      calc.forEach(rec=>{
+        const e=edits[rec.cycle]||{};
+        if(!e.sellDate) return;
+        const d=new Date(e.sellDate);
+        if(start && d<start) return;
+        if(end && d>end) return;
+        const k=d.toISOString().slice(0,7);
+        const qty=+(e.qty ?? a.defShares);
+        const pl=(rec.plannedSell-rec.plannedBuy)*(qty||0);
+        buckets[k]=(buckets[k]||0)+pl;
+      });
+    }
+  });
+  const labels=Object.keys(buckets).sort();
+  const data=labels.map(k=>Math.round(buckets[k]*100)/100);
+  document.getElementById('totalsLine').textContent='Total: $'+fmt(data.reduce((a,b)=>a+b,0));
+
+  const ctx=document.getElementById('plChart').getContext('2d');
+  if(chart) chart.destroy();
+  chart=new Chart(ctx,{type:'bar',data:{labels,datasets:[{label:'Realized P/L',data}]},options:{responsive:true,scales:{y:{beginAtZero:true}}}});
+}
+document.getElementById('btnUpdateChart').addEventListener('click',buildChart);
+
+// === LOGIC END ===
 </script>
 </body>
 </html>
